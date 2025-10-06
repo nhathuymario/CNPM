@@ -1,0 +1,91 @@
+.header-bar {
+  display: flex;
+  align-items: center;
+  background: #0771c2;
+  height: 40px;
+  padding: 0 12px;
+  color: #ffffff;
+  font-family: "Segoe UI", Arial, sans-serif;
+  border-bottom: 1px solid #e7e7e7;
+  justify-content: space-between;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.menu-icon {
+  font-size: 22px;
+  color: #212121;
+  background: none;
+  border: none;
+  margin-right: 10px;
+  cursor: pointer;
+  padding: 0;
+}
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #1062b3;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: bold;
+  border-right: 1px solid #e7e7e7;
+  padding: 0 12px;
+  height: 40px;
+  transition: background 0.2s;
+}
+.header-btn img {
+  height: 22px;
+  width: 22px;
+  object-fit: contain;
+}
+.header-btn:last-child {
+  border-right: none;
+}
+.header-btn:hover {
+  background: #ffffff;
+  color: #1062b3;
+}
+.header-btn.active img,
+.header-btn:hover img {
+  filter: invert(36%) sepia(96%) saturate(1812%) hue-rotate(183deg)
+    brightness(97%) contrast(92%);
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.power-icon img {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+  filter: none;
+  background: none;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: bold;
+}
+.user-info img {
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #dedede;
+  border: 2px solid #fff;
+}
+.username {
+  color: #fff;
+}
+.dropdown-arrow {
+  font-size: 13px;
+  color: #fff;
+  margin-left: 4px;
+}
