@@ -16,7 +16,7 @@
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
             
         </span>
-        <a class="header-btn order-btn active" href="#">
+        <a class="header-btn order-btn active" href="index.php">
         <i class="fa-solid fa-clipboard"></i>
             <span>Order</span>
         </a>
