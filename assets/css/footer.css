@@ -1,0 +1,32 @@
+#footer {
+    background-color: rgb(255, 255, 255);
+}
+
+#footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    width: 80%;
+    color: black;
+}
+
+#infor {
+    float: left;
+    padding: 5px 50px 0 100px;
+    margin: 20px 0 10px 0;
+}
+
+#infor p {
+    margin-left: 10px;
+}
+
+footer hr {
+    clear: both;
+    width: 80%;
+}
+#copy {
+    clear: both;
+    text-align: center;
+    padding-bottom: 20px;
+}
