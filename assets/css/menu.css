@@ -1,16 +1,62 @@
 .sidebar-menu {
   position: fixed;
   top: 0;
-  left: -170px; /* Ẩn đi */
+  left: -170px;
   width: 170px;
   height: 100vh;
   background: #085eb8;
   transition: left 0.25s;
   z-index: 9999;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #fff;
 }
+
 .sidebar-menu.open {
-  left: 0; /* Hiện ra */
+  left: 0;
 }
+
+.sidebar-title {
+  padding: 12px 16px 6px 16px;
+  font-weight: bold;
+  font-size: 15px;
+  border-bottom: 1px solid #1062b3;
+}
+
+.sidebar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  border: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-item img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.sidebar-item:hover {
+  background: #1062b3;
+  color: #ffe082;
+}
+
+.sidebar-item.active {
+  border: 2px solid #be70f7;
+  background: #1062b3;
+}
+
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -18,6 +64,6 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.07);
   z-index: 9998;
 }

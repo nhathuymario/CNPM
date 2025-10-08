@@ -7,11 +7,11 @@
 
 <div class="sidebar-menu" id="sidebarMenu">
     <div class="sidebar-top">Tổng quát</div>
-    <a class="sidebar-item" href="#"><img src="icons/order.png" />Order</a>
-    <a class="sidebar-item" href="#"><img src="icons/map.png" />Sơ đồ</a>
-    <a class="sidebar-item" href="#"><img src="icons/return.png" />Trả món</a>
-    <a class="sidebar-item" href="#"><img src="icons/kho.png" />Kho</a>
-    <a class="sidebar-item" href="#"><img src="icons/help.png" />Trợ giúp</a>
+    <a class="sidebar-item" href="#"><i class="fa-solid fa-clipboard"></i>Order</a>
+    <a class="sidebar-item" href="#"><i class="fa-solid fa-map"></i> Sơ đồ</a>
+    <a class="sidebar-item" href="#"><i class="fa-solid fa-kitchen-set"></i>Trả món</a>
+    <a class="sidebar-item" href="#"><i class="fa-solid fa-warehouse"></i>Kho</a>
+    <a class="sidebar-item" href="#"><i class="fa-solid fa-comments"></i></i>Trợ giúp</a>
 </div>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
             
@@ -29,10 +29,10 @@
             <span>Trả món</span>
         </a> 
     </div>
-    <div class="header-right">
+    <!-- <div class="header-right">
         <span class="power-icon">
             <img src="icons/power.png" alt="Power" />
-    </span>
+    </span> -->
         <span class="user-info">
     <label for="avatarUpload" style="cursor:pointer;">
         <img id="userAvatar" src="icons/user.png" alt="User" />

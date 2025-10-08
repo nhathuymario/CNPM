@@ -54,11 +54,11 @@
   filter: invert(36%) sepia(96%) saturate(1812%) hue-rotate(183deg)
     brightness(97%) contrast(92%);
 }
-.header-right {
+/* .header-right {
   display: flex;
   align-items: center;
   gap: 18px;
-}
+} */
 .power-icon img {
   height: 24px;
   width: 24px;

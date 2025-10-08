@@ -4,15 +4,15 @@ body {
   background: #f8f8f8;
   font-family: Arial, sans-serif;
 }
-.header-title {
+/* .header-title {
   font-size: 20px;
   font-weight: bold;
-}
+} */
 .order-container {
   display: flex;
   gap: 18px;
-  padding: 30px;
-  margin-top: 90px; /* cao hơn header */
+  padding: 15px;
+  margin-top: 15px;
   min-height: calc(100vh - 90px);
   box-sizing: border-box;
 }
@@ -156,4 +156,7 @@ body {
 }
 .dish-card button:hover {
   background: #1862bd;
+}
+.sidebar-top {
+  text-align: center;
 }

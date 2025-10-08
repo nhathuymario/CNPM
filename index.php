@@ -1,8 +1,10 @@
+
 <?php 
 $title = "Trang chủ";
+session_start();
 include 'functions/database.php';
 include 'includes/header.php';
-session_start();
+
 if (!isset($_SESSION['order'])) $_SESSION['order'] = [];
 // Lấy danh sách món ăn
 $dishes = [];
@@ -33,9 +35,20 @@ if (isset($_POST['add_dish'])) {
 }
 
 // Xóa món: Xóa đúng id
+// if (isset($_POST['remove_dish'])) {
+//     $id = intval($_POST['remove_dish']);
+//     unset($_SESSION['order'][$id]);
+// }
 if (isset($_POST['remove_dish'])) {
     $id = intval($_POST['remove_dish']);
-    unset($_SESSION['order'][$id]);
+    if (isset($_SESSION['order'][$id])) {
+        // Giảm số lượng đi 1
+        $_SESSION['order'][$id]['quantity'] -= 1;
+        // Nếu số lượng <= 0 thì xóa khỏi đơn luôn
+        if ($_SESSION['order'][$id]['quantity'] <= 0) {
+            unset($_SESSION['order'][$id]);
+        }
+    }
 }
 
 // Các nút lưu/gửi bếp/thành tiền (demo)
@@ -56,13 +69,14 @@ foreach ($_SESSION['order'] as $item) {
     $qty = isset($item['quantity']) ? $item['quantity'] : 1;
     $total += $item['price'] * $qty;
 }
+ob_start();
 ?>
-<!DOCTYPE html>
+<!-- <!DOCTYPE html> -->
 <html>
-<head>
+<!-- <head>
     <title>Order Món Ăn</title>
     <link rel="stylesheet" href="order.css">
-</head>
+</head> -->
 <body>
     <!-- HEADER (giả lập) -->
     <!-- <header style="height:70px;background:#1976d2;color:#fff;display:flex;align-items:center;padding-left:20px;">
