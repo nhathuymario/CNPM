@@ -15,21 +15,18 @@ html {
 .login-box {
   background: #fff;
   border-radius: 10px;
-  width: 400px;
-  max-width: 95vw;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
+  width: 350px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
   padding: 28px 18px 16px 18px;
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
 }
 .login-title {
   text-align: center;
-  font-size: 23px;
+  font-size: 22px;
   font-weight: bold;
   margin-bottom: 20px;
-  font-family: "Times New Roman", serif;
 }
 .input-row {
   display: flex;
@@ -39,17 +36,13 @@ html {
   margin-bottom: 15px;
   border: 1px solid #e0e0e0;
   padding: 0 14px;
-  height: 46px;
+  height: 44px;
 }
-.input-row .icon {
-  margin-right: 6px;
-  display: flex;
-  align-items: center;
-}
-.input-row img {
+.input-row .icon img {
   width: 22px;
   height: 22px;
   object-fit: contain;
+  margin-right: 7px;
 }
 .input-row input {
   border: none;
@@ -59,13 +52,6 @@ html {
   flex: 1;
   padding: 7px 0;
   color: #222;
-}
-.input-row input::placeholder {
-  color: #b6b6b6;
-}
-.input-row input:disabled {
-  color: #b6b6b6;
-  background: transparent;
 }
 .login-btn {
   background: #085eb8;
@@ -90,15 +76,4 @@ html {
   padding: 7px 10px;
   text-align: center;
   font-weight: bold;
-}
-.lang {
-  text-align: center;
-  color: #222;
-  margin-top: 18px;
-  font-size: 15px;
-  font-weight: 500;
-}
-.lang img {
-  vertical-align: middle;
-  margin-right: 5px;
 }
