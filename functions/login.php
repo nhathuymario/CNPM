@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '/database.php'; // Kết nối database
+require 'database.php'; // Kết nối database
 
 $error = '';
 

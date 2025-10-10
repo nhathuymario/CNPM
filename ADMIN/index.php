@@ -4,7 +4,7 @@ $title = "Trang chủ";
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: functions/login.php");
+    header("Location: ../functions/login.php");
     exit();
 }
 // Lấy thông tin user từ session
@@ -13,8 +13,8 @@ $username = $_SESSION['username'];
 $restaurant_id = $_SESSION['restaurant_id'];
 
 
-include 'functions/database.php';
-include 'includes/header.php';
+include '../functions/database.php';
+// include '../includes/header.php';
 
 if (!isset($_SESSION['order'])) $_SESSION['order'] = [];
 // Lấy danh sách món ăn
@@ -150,5 +150,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-include 'includes/master.php';
+include '../includes/masterAdmin.php';
 ?>
