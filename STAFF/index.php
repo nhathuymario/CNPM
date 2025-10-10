@@ -1,11 +1,29 @@
 <?php
 session_start();
-require '../functions/database.php';
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../functions/loginStaff.php");
+    exit();
+}
 
-// Kiểm tra quyền
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] != 'staff' && $_SESSION['role'] != 'admin')) {
+// // Kiểm tra quyền admin hoặc staff
+// if ($_SESSION['role'] != 'staff' && $_SESSION['role'] != 'admin') {
+//     die("Bạn không có quyền truy cập trang này!");
+// }
+// Kiểm tra quyền admin hoặc staff
+if ($_SESSION['role'] != 'staff') {
+    header("Location: ../functions/loginStaff.php");
     die("Bạn không có quyền truy cập trang này!");
 }
+
+// Lấy thông tin user từ session
+$user_id = $_SESSION['user_id'];
+$username = $_SESSION['username'];
+$restaurant_id = $_SESSION['restaurant_id'];
+
+
+
+require '../functions/database.php';
+ob_start();
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -52,3 +70,8 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] != 'staff' && $_SESSION['
     </table>
 </body>
 </html>
+
+<?php
+$content = ob_get_clean();
+include '../includes/masterStaff.php';
+?>

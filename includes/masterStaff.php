@@ -23,7 +23,7 @@
 </head>
 <body>
 
-<?php include __DIR__ . '/header.php'; ?>
+<?php include __DIR__ . '/headerStaff.php'; ?>
 
 <main>
 <?php echo $content; ?>

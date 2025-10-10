@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['username'] = $user['username'];
         $_SESSION['restaurant_id'] = $user['restaurant_id'];
         $_SESSION['role'] = $user['role']; // <--- QUAN TRỌNG
-        header('Location: ../admin/index.php'); // hoặc về trang phù hợp
+        header('Location: ../staff/index.php'); // hoặc về trang phù hợp
         exit();
     } else {
         $error = "Sai tài khoản hoặc mật khẩu!";

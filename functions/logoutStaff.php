@@ -1,6 +1,6 @@
 <?php
 session_start();
 session_destroy();
-header("Location: ../STAFF/index.php");
+header("Location: ../staff/index.php");
 exit();
 ?>

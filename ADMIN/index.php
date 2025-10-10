@@ -7,6 +7,16 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../functions/login.php");
     exit();
 }
+
+// // Kiểm tra quyền admin hoặc staff
+// if ($_SESSION['role'] != 'staff' && $_SESSION['role'] != 'admin') {
+//     die("Bạn không có quyền truy cập trang này!");
+// }
+// Kiểm tra quyền admin hoặc staff
+if ($_SESSION['role'] != 'admin') {
+    die("Bạn không có quyền truy cập trang này!");
+}
+
 // Lấy thông tin user từ session
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
