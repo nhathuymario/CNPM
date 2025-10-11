@@ -5,23 +5,18 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// // Kiểm tra quyền admin hoặc staff
-// if ($_SESSION['role'] != 'staff' && $_SESSION['role'] != 'admin') {
+// if ($_SESSION['role'] != 'staff') {
+//     header("Location: ../functions/loginStaff.php");
 //     die("Bạn không có quyền truy cập trang này!");
 // }
-// Kiểm tra quyền admin hoặc staff
-if ($_SESSION['role'] != 'staff') {
-    header("Location: ../functions/loginStaff.php");
-    die("Bạn không có quyền truy cập trang này!");
-}
 
 // Lấy thông tin user từ session
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 $restaurant_id = $_SESSION['restaurant_id'];
 
-
-
+require '../functions/checkloginStaff.php';
+checkRole(['admin', 'staff']);
 require '../functions/database.php';
 ob_start();
 ?>
