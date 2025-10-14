@@ -9,11 +9,10 @@
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/header.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/menu.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/footer.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/oder.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/order.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/login.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/user.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/payment.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/history.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/listmenu.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="<?php echo BASE_URL; ?>assets/js/iconuser.js"></script>
@@ -27,7 +26,7 @@
 
 <main>
 <?php echo $content; ?>
-</main> 
+</main>
 
 <?php include __DIR__ . '/footer.php'; ?>
 </body>

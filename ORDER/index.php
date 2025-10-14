@@ -2,22 +2,22 @@
 $title = "Trang chủ";
 session_start();
 
-// ✅ Kiểm tra đăng nhập
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../functions/login.php");
-    exit();
-}
+// // ✅ Kiểm tra đăng nhập
+// if (!isset($_SESSION['user_id'])) {
+//     header("Location: ../functions/login.php");
+//     exit();
+// }
 
-// ✅ Kiểm tra quyền truy cập
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'customer') {
-    header('Location: ../staff/index.php');
-    exit();
-}
+// // ✅ Kiểm tra quyền truy cập
+// if (!isset($_SESSION['role']) || $_SESSION['role'] != 'customer') {
+//     header('Location: ../staff/index.php');
+//     exit();
+// }
 
-// ✅ Thông tin user
-$user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
-$restaurant_id = $_SESSION['restaurant_id'];
+// // ✅ Thông tin user
+// $user_id = $_SESSION['user_id'];
+// $username = $_SESSION['username'];
+// $restaurant_id = $_SESSION['restaurant_id'];
 
 include '../functions/database.php';
 
@@ -149,4 +149,4 @@ ob_start();
 $content = ob_get_clean();
 
 include '../includes/masterOrder.php';
-?>
+?> 

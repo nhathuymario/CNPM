@@ -1,8 +1,16 @@
-document.getElementById("sidebarToggle").onclick = function () {
-  document.getElementById("sidebarMenu").classList.add("open");
-  document.getElementById("sidebarOverlay").style.display = "block";
-};
-document.getElementById("sidebarOverlay").onclick = function () {
-  document.getElementById("sidebarMenu").classList.remove("open");
-  document.getElementById("sidebarOverlay").style.display = "none";
-};
+document.addEventListener("DOMContentLoaded", function () {
+  var sidebarToggle = document.getElementById("sidebarToggle");
+  var sidebarMenu = document.getElementById("sidebarMenu");
+  var sidebarOverlay = document.getElementById("sidebarOverlay");
+
+  if (sidebarToggle && sidebarMenu && sidebarOverlay) {
+    sidebarToggle.onclick = function () {
+      sidebarMenu.classList.add("open");
+      sidebarOverlay.style.display = "block";
+    };
+    sidebarOverlay.onclick = function () {
+      sidebarMenu.classList.remove("open");
+      sidebarOverlay.style.display = "none";
+    };
+  }
+});

@@ -22,135 +22,99 @@ checkRole(['admin']);
 include '../functions/database.php';
 // include '../includes/header.php';
 
-if (!isset($_SESSION['order'])) $_SESSION['order'] = [];
-// Lấy danh sách món ăn
+// Xử lý thêm món
+if (isset($_POST['add_dish'])) {
+    $name = $_POST['name'];
+    $price = intval($_POST['price']);
+    $image = $_POST['image'];
+    $conn->query("INSERT INTO dishes (name, price, image) VALUES ('$name', $price, '$image')");
+    header("Location: dishes.php");
+    exit();
+}
+
+// Xử lý xóa món
+if (isset($_GET['delete_id'])) {
+    $id = intval($_GET['delete_id']);
+    $conn->query("DELETE FROM dishes WHERE id=$id");
+    header("Location: index.php");
+    exit();
+}
+
+// Xử lý sửa món
+if (isset($_POST['edit_dish'])) {
+    $id = intval($_POST['id']);
+    $name = $_POST['name'];
+    $price = intval($_POST['price']);
+    $image = $_POST['image'];
+    $conn->query("UPDATE dishes SET name='$name', price=$price, image='$image' WHERE id=$id");
+    header("Location: index.php");
+    exit();
+}
+
+// Lấy danh sách món
 $dishes = [];
 $result = $conn->query("SELECT * FROM dishes");
 while($row = $result->fetch_assoc()) {
     $dishes[] = $row;
 }
 
-// Thêm món: Lưu theo key là id
-if (isset($_POST['add_dish'])) {
-    $id = intval($_POST['add_dish']);
-    if (isset($_SESSION['order'][$id])) {
-        $_SESSION['order'][$id]['quantity']++;
-    } else {
-        foreach ($dishes as $dish) {
-            if ($dish['id'] == $id) {
-                $_SESSION['order'][$id] = [
-                    'id' => $dish['id'],
-                    'name' => $dish['name'],
-                    'price' => $dish['price'],
-                    'image' => $dish['image'],
-                    'quantity' => 1
-                ];
-                break;
-            }
-        }
-    }
+// Nếu sửa, lấy thông tin món
+$edit_dish = null;
+if (isset($_GET['edit_id'])) {
+    $id = intval($_GET['edit_id']);
+    $r = $conn->query("SELECT * FROM dishes WHERE id=$id");
+    $edit_dish = $r->fetch_assoc();
 }
-
-// Xóa món: Xóa đúng id
-// if (isset($_POST['remove_dish'])) {
-//     $id = intval($_POST['remove_dish']);
-//     unset($_SESSION['order'][$id]);
-// }
-if (isset($_POST['remove_dish'])) {
-    $id = intval($_POST['remove_dish']);
-    if (isset($_SESSION['order'][$id])) {
-        // Giảm số lượng đi 1
-        $_SESSION['order'][$id]['quantity'] -= 1;
-        // Nếu số lượng <= 0 thì xóa khỏi đơn luôn
-        if ($_SESSION['order'][$id]['quantity'] <= 0) {
-            unset($_SESSION['order'][$id]);
-        }
-    }
-}
-
-// Các nút lưu/gửi bếp/thành tiền (demo)
-if (isset($_POST['action'])) {
-    if ($_POST['action'] == 'save') {
-        $msg = "Đã lưu đơn!";
-    } elseif ($_POST['action'] == 'kitchen') {
-        $msg = "Đã gửi bếp!";
-    } elseif ($_POST['action'] == 'checkout') {
-        $msg = "Đã thanh toán!";
-        $_SESSION['order'] = [];
-    }
-}
-
-// Tính tổng tiền
-$total = 0;
-foreach ($_SESSION['order'] as $item) {
-    $qty = isset($item['quantity']) ? $item['quantity'] : 1;
-    $total += $item['price'] * $qty;
-}
-ob_start();
 ?>
-<!-- <!DOCTYPE html> -->
-<html>
-<!-- <head>
-    <title>Order Món Ăn</title>
-    <link rel="stylesheet" href="order.css">
-</head> -->
-<body>
-    <!-- HEADER (giả lập) -->
-    <!-- <header style="height:70px;background:#1976d2;color:#fff;display:flex;align-items:center;padding-left:20px;">
-        <span style="font-weight:bold;font-size:22px;">Order Món Ăn</span>
-    </header> -->
-    <div class="order-container">
-        <!-- Bên trái: Món đã chọn -->
-        <div class="order-left">
-            <h3>Đã chọn</h3>
-            <div class="order-list-wrap">
-                <ul class="order-list">
-                    <?php foreach($_SESSION['order'] as $id => $item): ?>
-                        <?php $qty = isset($item['quantity']) ? $item['quantity'] : 1; ?>
-                        <li>
-                            <img src="<?php echo $item['image']; ?>" class="dish-img">
-                            <span><?php echo $item['name']; ?> (<?php echo $qty; ?>)</span>
-                            <span><?php echo number_format($item['price'] * $qty); ?>đ</span>
-                            <form method="post" style="display:inline;">
-                                <button class="remove-btn" type="submit" name="remove_dish" value="<?php echo $id; ?>">Xóa</button>
-                            </form>
-                        </li>
-                    <?php endforeach; ?>
-                    <?php if(count($_SESSION['order']) == 0): ?>
-                        <li>Chưa chọn món nào</li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-            <div class="total-block">
-                <span>Tổng tiền: </span>
-                <span class="total-price"><?php echo number_format($total); ?> đ</span>
-            </div>
-            <form method="post" class="action-group">
-                <button type="submit" name="action" value="save" class="action-btn save">Lưu</button>
-                <button type="submit" name="action" value="kitchen" class="action-btn kitchen">Gửi bếp</button>
-                <button type="submit" name="action" value="checkout" class="action-btn checkout">Tính tiền</button>
-            </form>
-            <?php if(isset($msg)) echo "<div class='msg'>$msg</div>"; ?>
-        </div>
-        <!-- Bên phải: Món để chọn -->
-        <div class="order-right">
-            <h3>Chọn món</h3>
-            <div class="dish-grid">
-                <?php foreach($dishes as $dish): ?>
-                <form method="post" class="dish-card">
-                    <img src="<?php echo $dish['image']; ?>" class="dish-img">
-                    <div class="dish-name"><?php echo $dish['name']; ?></div>
-                    <div class="dish-price"><?php echo number_format($dish['price']); ?>đ</div>
-                    <button type="submit" name="add_dish" value="<?php echo $dish['id']; ?>">Chọn</button>
-                </form>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
 
-
+<div class="container">
+    <h2>Quản lý món ăn</h2>
+    <!-- Form thêm/sửa món -->
+    <form method="post">
+        <div class="form-group">
+            <label>Tên món:</label>
+            <input type="text" name="name" required value="<?php echo $edit_dish ? $edit_dish['name'] : ''; ?>">
+        </div>
+        <div class="form-group">
+            <label>Giá (vnđ):</label>
+            <input type="number" name="price" required value="<?php echo $edit_dish ? $edit_dish['price'] : ''; ?>">
+        </div>
+        <div class="form-group">
+            <label>Ảnh (đường dẫn):</label>
+            <input type="text" name="image" required value="<?php echo $edit_dish ? $edit_dish['image'] : ''; ?>">
+        </div>
+        <?php if ($edit_dish): ?>
+            <input type="hidden" name="id" value="<?php echo $edit_dish['id']; ?>">
+            <input type="submit" name="edit_dish" value="Lưu sửa">
+            <a href="dishes.php" style="margin-left:12px;">Hủy</a>
+        <?php else: ?>
+            <input type="submit" name="add_dish" value="Thêm món">
+        <?php endif; ?>
+    </form>
+    <hr>
+    <!-- Bảng món ăn -->
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Tên món</th>
+            <th>Giá</th>
+            <th>Ảnh</th>
+            <th>Thao tác</th>
+        </tr>
+        <?php foreach($dishes as $dish): ?>
+        <tr>
+            <td><?php echo $dish['id']; ?></td>
+            <td><?php echo $dish['name']; ?></td>
+            <td><?php echo number_format($dish['price']); ?>đ</td>
+            <td><img src="<?php echo $dish['image']; ?>" class="dish-img"></td>
+            <td>
+                <a class="btn btn-edit" href="index.php?edit_id=<?php echo $dish['id']; ?>">Sửa</a>
+                <a class="btn btn-delete" href="index.php?delete_id=<?php echo $dish['id']; ?>" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
 
 
 

@@ -29,24 +29,8 @@
             <span>Trả món</span>
         </a> 
     </div>
-    <!-- <div class="header-right">
-        <span class="power-icon">
-            <img src="icons/power.png" alt="Power" />
-    </span> -->
-        <!-- <span class="user-info">
-    <label for="avatarUpload" style="cursor:pointer;">
-        <img id="userAvatar" src="icons/user.png" alt="User" />
-    </label>
-    <input type="file" id="avatarUpload" style="display:none;" accept="image/*" />
-    <span class="username">Nguyễn Văn Tèo</span>
-    <span class="dropdown-arrow">&#9660;</span>
-    </span> -->
-    <!-- </div> -->
+    
     <div class="user-info">
-    <label for="avatarUpload" style="cursor:pointer;">
-        <img id="userAvatar" src="icons/user.png" alt="User" />
-    </label>
-    <input type="file" id="avatarUpload" style="display:none;" accept="image/*" />
     <span class="username">
         <?php echo htmlspecialchars($_SESSION['username']); ?>
     </span>
