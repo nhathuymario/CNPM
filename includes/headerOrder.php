@@ -24,10 +24,6 @@
         <i class="fa-solid fa-map"></i> 
             <span>Sơ đồ</span>
         </a>
-        <a class="header-btn" href="#">
-        <i class="fa-solid fa-kitchen-set"></i>
-            <span>Trả món</span>
-        </a> 
     </div>
 </div>
 </header>
