@@ -50,14 +50,20 @@ document.addEventListener('DOMContentLoaded', () => {
     setState(true, 'Đang gọi...');
 
     try {
-      const res = await fetch('../functions/call_staff.php', {
+      // Dùng URL tuyệt đối từ PHP để tránh sai đường dẫn
+      const base = (window.CNPM_BASE_URL || '').replace(/\/+$/, '') + '/';
+      const res = await fetch(base + 'functions/call-staff.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body: new URLSearchParams({ table, k })
       });
 
-      const json = await res.json().catch(() => ({}));
-      if (json && json.ok) {
+      // Thử parse JSON; nếu fail, lấy text để debug
+      let json = null, txt = '';
+      try { json = await res.json(); }
+      catch { txt = await res.text(); }
+
+      if (res.ok && json && json.ok) {
         showToast(json.message || 'Đã gọi nhân viên.');
         setState(true, 'Đã gọi');
         setTimeout(() => {
@@ -65,7 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
           busy = false;
         }, cooldownMs);
       } else {
-        showToast(json.message || 'Không gửi được yêu cầu. Vui lòng thử lại.', true);
+        const msg = (json && json.message) || (txt ? ('Lỗi: ' + txt) : 'Không gửi được yêu cầu. Vui lòng thử lại.');
+        showToast(msg, true);
         setState(false, 'Trợ giúp');
         busy = false;
       }

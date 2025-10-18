@@ -32,10 +32,10 @@ if (isset($_GET['add_dish'])) {
                     'image' => $dish['image'],
                     'quantity' => 1
                 ];
-                // Có thể set $msg nội bộ, nhưng KHÔNG hiển thị trên UI nữa
+                // Nội bộ
                 $msg = "Đã thêm " . htmlspecialchars($dish['name']) . " vào giỏ.";
             } else {
-                // Không tăng; gợi ý nội bộ dùng +/− (KHÔNG hiển thị UI)
+                // Nội bộ
                 $msg = htmlspecialchars($dish['name']) . " đã có trong giỏ. Dùng nút +/− để thay đổi số lượng.";
             }
             break;
@@ -69,7 +69,7 @@ foreach ($_SESSION['order'] as $item) {
 // Đặt đơn (nút Tính tiền)
 if (isset($_POST['action']) && $_POST['action'] === 'place_order') {
     if ($total <= 0) {
-        // Không hiển thị thông báo dưới nút; có thể cân nhắc chặn bằng JS sau
+        // Không hiển thị khi chưa có món
         $silentError = true;
     } else {
         $pm = $_POST['payment_method'] ?? 'cash';
@@ -138,7 +138,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'place_order') {
 
         // Tiền mặt: giữ pending để nhân viên thu tại bàn
         $_SESSION['order'] = [];
-        // $msg = "✅ Đã đặt đơn..."; // KHÔNG hiển thị nữa
+        // HIỂN THỊ THÔNG BÁO CHO KHÁCH khi thanh toán tiền mặt
+        $msg = "✅ Đã đặt đơn. Nhân viên sẽ phục vụ và thu tiền tại bàn.";
     }
 }
 
@@ -236,7 +237,9 @@ ob_start();
       <button type="submit" name="action" value="place_order" class="primary-btn">Tính tiền</button>
     </form>
 
-    <!-- ĐÃ BỎ HOÀN TOÀN dòng thông báo dưới nút Tính tiền -->
+    <?php if (!empty($msg)): ?>
+      <div class="msg"><?php echo $msg; ?></div>
+    <?php endif; ?>
   </div>
 </div>
 

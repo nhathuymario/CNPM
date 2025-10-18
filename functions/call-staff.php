@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `help_requests` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ");
 
-// Chống spam: nếu trong 60 giây qua đã có yêu cầu 'new' của bàn này thì không ghi thêm
+// Chống spam 60 giây/bàn
 $chk = $conn->prepare("
   SELECT id FROM help_requests 
   WHERE table_number = ? AND status = 'new' AND created_at >= (NOW() - INTERVAL 60 SECOND)

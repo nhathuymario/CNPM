@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/header.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/menu.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/footer.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/oder.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/order.css"><!-- sửa từ oder.css -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/login.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/user.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/payment.css">

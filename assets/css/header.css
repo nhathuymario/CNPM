@@ -12,7 +12,7 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px; /* tăng khoảng cách để nút Order và Trợ giúp thoáng hơn */
 }
 .menu-icon {
   font-size: 22px;
@@ -54,11 +54,26 @@
   filter: invert(36%) sepia(96%) saturate(1812%) hue-rotate(183deg)
     brightness(97%) contrast(92%);
 }
+/* Khu vực phải không còn dùng, có thể giữ nguyên hoặc bỏ đi */
 /* .header-right {
   display: flex;
   align-items: center;
   gap: 18px;
 } */
+
+/* Style riêng cho nút Trợ giúp để nổi bật */
+.header-btn.help-btn {
+  border: 1px solid #cfe0ff;
+  background: #0b72cf;
+  color: #fff;
+  border-radius: 8px;
+}
+.header-btn.help-btn:hover {
+  background: #ffffff;
+  color: #0b72cf;
+  border-color: #0b72cf;
+}
+
 .power-icon img {
   height: 24px;
   width: 24px;
