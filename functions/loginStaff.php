@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
             // ✅ PHÂN QUYỀN: kiểm tra role và điều hướng tương ứng
             if (in_array($user['role'], ['admin', 'staff'])) {
-                header('Location: ../staff/index.php');
+                header('Location: ../STAFF/index.php');
                 exit();
             } else {
                 session_destroy();

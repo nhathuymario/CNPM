@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
             // ✅ PHÂN QUYỀN: kiểm tra role và điều hướng tương ứng
             if ($_SESSION['role'] === 'admin') {
-                header('Location: ../admin/index.php');
+                header('Location: ../ADMIN/index.php');
                 exit();
             } else {
                 session_destroy();
