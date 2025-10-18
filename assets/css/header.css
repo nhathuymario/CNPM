@@ -54,11 +54,25 @@
   filter: invert(36%) sepia(96%) saturate(1812%) hue-rotate(183deg)
     brightness(97%) contrast(92%);
 }
-/* .header-right {
+.header-right {
   display: flex;
   align-items: center;
   gap: 18px;
-} */
+}
+.help-btn {
+  background: #1062b3;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.help-btn:hover {
+  background: #ffffff;
+  color: #1062b3;
+}
+.help-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .power-icon img {
   height: 24px;
   width: 24px;
