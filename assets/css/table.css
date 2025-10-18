@@ -1,0 +1,113 @@
+.table-management-container {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  width: 100%;
+  margin-top: 24px;
+  flex-wrap: wrap; /* THÊM DÒNG NÀY để khi không đủ ngang sẽ tự xuống hàng */
+}
+.table-add-form {
+  flex: 1 1 320px;
+  width: 100%; /* Đảm bảo co sát lề trên màn nhỏ */
+  max-width: 400px; /* KHÔNG vượt quá 400px, bạn có thể giảm (320px, 360px...) cho hợp header */
+  min-width: 220px;
+  background: #f6f6f6;
+  padding: 24px 20px 20px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0001;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin: 0 auto; /* căn giữa khi ở chế độ mobile */
+}
+.table-add-form h3 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 20px;
+  color: #0063a6;
+}
+.table-add-form label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 5px;
+}
+.table-add-form input,
+.table-add-form select {
+  width: 100%;
+  padding: 7px 10px;
+  margin-bottom: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.table-add-form button {
+  width: 100%;
+  background: #0063a6;
+  color: #fff;
+  padding: 10px 0;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+.table-add-form button:hover {
+  background: #004a80;
+}
+.table-list-section {
+  flex: 2 1 0px;
+  min-width: 340px; /* Đảm bảo bảng không bị bóp lại */
+  background: #fff;
+  padding: 18px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0001;
+}
+.table-list-section h2 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 22px;
+  color: #0063a6;
+}
+.table-list {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.table-list th,
+.table-list td {
+  border: 1px solid #e5e5e5;
+  padding: 10px 8px;
+  text-align: center;
+}
+.table-list th {
+  background: #f2f7fa;
+  font-weight: bold;
+}
+.table-list tr:nth-child(even) {
+  background: #f9fbfd;
+}
+.table-list tr:hover {
+  background: #e7f1ff;
+}
+.table-list a {
+  color: #0063a6;
+  text-decoration: underline;
+  margin: 0 5px;
+  font-weight: 500;
+}
+.table-list a:hover {
+  color: #004a80;
+  text-decoration: none;
+}
+@media (max-width: 900px) {
+  .table-management-container {
+    flex-direction: column;
+  }
+  .table-add-form,
+  .table-list-section {
+    width: 100%;
+    max-width: 100%; /* ĐẢM BẢO KHÔNG vượt quá cha khi mobile */
+    margin-bottom: 24px;
+  }
+}

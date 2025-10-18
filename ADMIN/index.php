@@ -65,6 +65,7 @@ if (isset($_GET['edit_id'])) {
     $r = $conn->query("SELECT * FROM dishes WHERE id=$id");
     $edit_dish = $r->fetch_assoc();
 }
+ob_start();
 ?>
 
 <div class="container">

@@ -30,8 +30,17 @@
 
       <a class="header-btn order-btn" href="<?php echo htmlspecialchars($orderHref); ?>">
         <i class="fa-solid fa-clipboard"></i>
+<<<<<<< HEAD
         <span>Order</span>
       </a>
+=======
+            <span>Order</span>
+        </a>
+        <a class="header-btn" href="#">
+        <i class="fa-solid fa-map"></i> 
+            <span>Sơ đồ</span>
+        </a>
+>>>>>>> 1ce4d838420fd2a429d0c41a03c085ae7ad349c3
     </div>
 
     <div class="header-right">
