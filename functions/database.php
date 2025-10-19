@@ -4,7 +4,7 @@
     $username = "root";
     $password = "";
     $database = "webnhahang";
-    $port = 3306;
+    $port = 3307;
 
     // Kết nối MySQL với port chỉ định
     $conn = new mysqli($host, $username, $password, $database, $port);

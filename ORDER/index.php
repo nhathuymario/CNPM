@@ -8,6 +8,14 @@ require_once '../functions/database.php';
 $table_number = isset($_GET['table']) ? intval($_GET['table']) : 1;
 $k = isset($_GET['k']) ? $_GET['k'] : '';
 
+// Lấy tầng của bàn từ DB
+$stmt = $conn->prepare("SELECT floor FROM tables WHERE table_number = ? AND qr_secret = ?");
+$stmt->bind_param("is", $table_number, $k);
+$stmt->execute();
+$res = $stmt->get_result();
+$table_info = $res->fetch_assoc();
+$floor = $table_info ? intval($table_info['floor']) : 1;
+
 // Khởi tạo giỏ hàng
 if (!isset($_SESSION['order'])) $_SESSION['order'] = [];
 
@@ -167,6 +175,7 @@ ob_start();
       <?php foreach ($dishes as $dish): 
             $inCart = isset($_SESSION['order'][$dish['id']]); ?>
         <form method="get" class="product-card" data-name="<?php echo htmlspecialchars(mb_strtolower($dish['name'])); ?>">
+        <input type="hidden" name="floor" value="<?php echo $floor; ?>">
           <input type="hidden" name="table" value="<?php echo $table_number; ?>">
           <input type="hidden" name="k" value="<?php echo htmlspecialchars($k); ?>">
           <img src="<?php echo htmlspecialchars($dish['image']); ?>" alt="<?php echo htmlspecialchars($dish['name']); ?>">
@@ -184,6 +193,7 @@ ob_start();
 
   <div class="right">
     <div class="bill-header">
+    <div class="table-code">Tầng: <?php echo htmlspecialchars($floor); ?></div>
       <div class="table-code">Bàn: <?php echo htmlspecialchars($table_number); ?></div>
       <div class="order-code">Đơn tạm</div>
     </div>
@@ -201,6 +211,7 @@ ob_start();
             <div class="col name"><?php echo htmlspecialchars($item['name']); ?></div>
             <div class="col qty">
               <form method="post" class="qty-form">
+              <input type="hidden" name="floor" value="<?php echo $floor; ?>">
                 <input type="hidden" name="table" value="<?php echo $table_number; ?>">
                 <input type="hidden" name="k" value="<?php echo htmlspecialchars($k); ?>">
                 <button type="submit" name="dec_dish" value="<?php echo intval($id); ?>" class="qty-btn minus" aria-label="Giảm">−</button>

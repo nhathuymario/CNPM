@@ -35,6 +35,14 @@ if (($order['payment_method'] ?? '') !== 'bank_transfer') {
     die('Đơn hàng này không dùng chuyển khoản.');
 }
 
+// Lấy floor của bàn từ bảng tables
+$stmt2 = $conn->prepare("SELECT floor FROM tables WHERE table_number = ?");
+$stmt2->bind_param("i", $order['table_number']);
+$stmt2->execute();
+$res2 = $stmt2->get_result();
+$table_info = $res2->fetch_assoc();
+$floor = $table_info ? intval($table_info['floor']) : 1;
+
 // Chuẩn hóa giá trị hiển thị
 $payment_status = 'pending';
 if ($hasPaymentStatus) {
@@ -66,6 +74,7 @@ $BANK_NAME           = 'VPBank';
 <body>
   <div class="payment-container">
     <h2>Thanh toán chuyển khoản cho đơn #<?php echo htmlspecialchars($order_id); ?></h2>
+    <p>Tầng: <strong><?php echo htmlspecialchars($floor); ?></strong></p>
     <p>Bàn: <strong><?php echo htmlspecialchars($order['table_number']); ?></strong></p>
     <p>Số tiền: <strong><?php echo number_format($order['total']); ?> đ</strong></p>
     <hr>

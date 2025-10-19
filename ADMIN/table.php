@@ -11,7 +11,7 @@ if (isset($_GET['delete'])) {
     exit();
 }
 // Lấy dữ liệu bàn
-$result = $conn->query("SELECT * FROM tables ORDER BY table_number");
+$result = $conn->query("SELECT * FROM tables ORDER BY floor, table_number");
 ob_start();
 ?>
 <head>
@@ -31,6 +31,10 @@ ob_start();
             <input type="hidden" name="id" value="<?= $edit['id'] ?>">
             <label for="table_number">Số bàn:</label>
             <input type="number" id="table_number" name="table_number" value="<?= $edit['table_number'] ?>" required>
+            
+            <label for="floor">Tầng:</label>
+            <input type="number" id="floor" name="floor" value="<?= $edit['floor'] ?>" min="1" required>
+            
             <label for="capacity">Sức chứa:</label>
             <input type="number" id="capacity" name="capacity" value="<?= $edit['capacity'] ?>" required>
             <label for="status">Trạng thái:</label>
@@ -46,6 +50,10 @@ ob_start();
         <form action="process.php" method="post">
             <label for="table_number">Số bàn:</label>
             <input type="number" id="table_number" name="table_number" required>
+            
+            <label for="floor">Tầng:</label>
+            <input type="number" id="floor" name="floor" value="1" min="1" required>
+            
             <label for="capacity">Sức chứa:</label>
             <input type="number" id="capacity" name="capacity" value="4" required>
             <label for="status">Trạng thái:</label>
@@ -63,8 +71,8 @@ ob_start();
         <h2>Danh sách bàn ăn</h2>
         <table class="table-list">
             <tr>
-                <th>ID</th>
                 <th>Số bàn</th>
+                <th>Tầng</th>
                 <th>Sức chứa</th>
                 <th>Trạng thái</th>
                 <th>Ngày tạo</th>
@@ -72,8 +80,8 @@ ob_start();
             </tr>
             <?php while($row = $result->fetch_assoc()): ?>
             <tr>
-                <td><?= $row['id'] ?></td>
                 <td><?= $row['table_number'] ?></td>
+                <td><?= $row['floor'] ?></td>
                 <td><?= $row['capacity'] ?></td>
                 <td><?= $row['status'] ?></td>
                 <td><?= $row['created_at'] ?></td>
