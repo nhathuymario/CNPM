@@ -42,4 +42,14 @@ if (isset($_POST['update'])) {
     header("Location: table.php");
     exit();
 }
+$exists = $conn->prepare("SELECT id FROM tables WHERE floor=? AND table_number=? LIMIT 1");
+$exists->bind_param("ii", $floor, $number);
+$exists->execute();
+$res = $exists->get_result();
+if ($res->num_rows > 0) {
+    $_SESSION['flash_error'] = "Bàn $number trên tầng $floor đã tồn tại.";
+    header("Location: table.php");
+    exit();
+}
+
 ?>

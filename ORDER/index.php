@@ -74,12 +74,15 @@ foreach ($_SESSION['order'] as $item) {
     $total += $item['price'] * $item['quantity'];
 }
 
-// Đặt đơn (nút Tính tiền)
+// Đặt đơn (nút Gọi món)
+// Thay đổi: chức năng "Tính tiền" trước đây đã xử lý chuyển khoản/redirect.
+// Bây giờ chỉ "gọi món" — lưu đơn, khóa bàn, không redirect, không tạo ref_code.
 if (isset($_POST['action']) && $_POST['action'] === 'place_order') {
     if ($total <= 0) {
         // Không hiển thị khi chưa có món
         $silentError = true;
     } else {
+        // Lấy phương thức (nếu khách chọn) nhưng không thực hiện redirect; đơn chỉ gọi món
         $pm = $_POST['payment_method'] ?? 'cash';
         $payment_method = ($pm === 'bank_transfer') ? 'bank_transfer' : 'cash';
 
@@ -130,24 +133,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'place_order') {
         $stmt2->bind_param("i", $table_number);
         $stmt2->execute();
 
-        // Nếu chuyển khoản: tạo ref_code (nếu có cột) và chuyển sang trang thanh toán
-        if ($payment_method === 'bank_transfer') {
-            $hasRef = $conn->query("SHOW COLUMNS FROM orders LIKE 'ref_code'")->num_rows > 0;
-            if ($hasRef) {
-                $ref_code = 'CF' . strtoupper(dechex($order_id)) . '-' . date('d');
-                $up = $conn->prepare("UPDATE orders SET ref_code = ? WHERE id = ?");
-                $up->bind_param("si", $ref_code, $order_id);
-                $up->execute();
-            }
-            $_SESSION['order'] = [];
-            header("Location: payment.php?order_id=" . $order_id . "&table=" . urlencode($table_number) . "&k=" . urlencode($k));
-            exit();
-        }
-
-        // Tiền mặt: giữ pending để nhân viên thu tại bàn
+        // Trước: chuyển khoản thì tạo ref_code và redirect sang payment.php
+        // Giờ: KHÔNG tạo ref_code, KHÔNG redirect. Chỉ xóa giỏ và trả thông báo gọi món.
         $_SESSION['order'] = [];
-        // HIỂN THỊ THÔNG BÁO CHO KHÁCH khi thanh toán tiền mặt
-        $msg = "✅ Đã đặt đơn. Nhân viên sẽ phục vụ và thu tiền tại bàn.";
+        $msg = "✅ Đã gọi món (Mã đơn: " . intval($order_id) . ").";
     }
 }
 
@@ -240,12 +229,12 @@ ob_start();
       <input type="hidden" name="table" value="<?php echo $table_number; ?>">
       <input type="hidden" name="k" value="<?php echo htmlspecialchars($k); ?>">
 
-      <div class="payment-choices">
+      <!-- <div class="payment-choices">
         <label><input type="radio" name="payment_method" value="cash" checked> Tiền mặt tại bàn</label>
         <label><input type="radio" name="payment_method" value="bank_transfer"> Chuyển khoản</label>
-      </div>
+      </div> -->
 
-      <button type="submit" name="action" value="place_order" class="primary-btn">Tính tiền</button>
+      <button type="submit" name="action" value="place_order" class="primary-btn">Gọi món</button>
     </form>
 
     <?php if (!empty($msg)): ?>

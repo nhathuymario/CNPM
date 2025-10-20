@@ -28,7 +28,7 @@ if (isset($_POST['add_dish'])) {
     $price = intval($_POST['price']);
     $image = $_POST['image'];
     $conn->query("INSERT INTO dishes (name, price, image) VALUES ('$name', $price, '$image')");
-    header("Location: dishes.php");
+    header("Location: index.php");
     exit();
 }
 
