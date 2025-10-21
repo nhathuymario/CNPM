@@ -6,13 +6,13 @@
   $orderHref = 'index.php' . (!empty($orderQuery) ? ('?' . http_build_query($orderQuery)) : '');
 
   // Ưu tiên dùng biến đã có từ ORDER/index.php; fallback dùng $_GET
-  $dataTable = isset($table_number) ? $table_number : (isset($_GET['table']) ? (int)$_GET['table'] : '');
+  $dataTable = isset($table_number) ? (int)$table_number : (isset($_GET['table']) ? (int)$_GET['table'] : '');
   $dataK     = isset($k) ? $k : (isset($_GET['k']) ? $_GET['k'] : '');
 ?>
 <header>
   <div class="header-bar">
     <div class="header-left">
-      <span class="menu-icon" id="sidebarToggle">
+      <span class="menu-icon" id="sidebarToggle" title="Mở menu">
         <i class="fa-solid fa-bars"></i>
       </span>
 
@@ -21,23 +21,36 @@
         <a class="sidebar-item" href="<?php echo htmlspecialchars($orderHref); ?>">
           <i class="fa-solid fa-clipboard"></i>Order
         </a>
-        <a class="sidebar-item" href="#"><i class="fa-solid fa-comments"></i>Trợ giúp</a>
+        <!-- Trợ giúp trong sidebar: gọi API qua order-help.js -->
+        <a class="sidebar-item"
+           href="#"
+           data-action="help"
+           <?php if ($dataTable !== ''): ?>
+             data-table="<?php echo htmlspecialchars($dataTable); ?>"
+           <?php endif; ?>
+           title="Gọi nhân viên hỗ trợ">
+          <i class="fa-solid fa-bell"></i>Trợ giúp
+        </a>
       </div>
 
       <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
 
-      <!-- Nút Order -->
-      <a class="header-btn order-btn" href="<?php echo htmlspecialchars($orderHref); ?>">
+      <!-- Nút Order: thêm class help-btn để giống nút Trợ giúp -->
+      <a class="header-btn order-btn help-btn"
+         href="<?php echo htmlspecialchars($orderHref); ?>">
         <i class="fa-solid fa-clipboard"></i>
         <span>Order</span>
       </a>
 
-      <!-- Nút Trợ giúp ngay cạnh Order -->
+      <!-- Nút Trợ giúp ngay cạnh Order (giữ nguyên) -->
       <button
         id="callStaffBtn"
         class="header-btn help-btn"
         type="button"
-        data-table="<?php echo htmlspecialchars($dataTable); ?>"
+        data-action="help"
+        <?php if ($dataTable !== ''): ?>
+          data-table="<?php echo htmlspecialchars($dataTable); ?>"
+        <?php endif; ?>
         data-k="<?php echo htmlspecialchars($dataK); ?>"
         title="Gọi nhân viên hỗ trợ"
       >

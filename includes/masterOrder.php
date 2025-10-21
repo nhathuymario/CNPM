@@ -22,6 +22,11 @@
       window.CNPM_BASE_URL = "<?php echo BASE_URL; ?>";
     </script>
 
+    <script>
+    window.BASE_URL = "<?php echo rtrim(defined('BASE_URL') ? BASE_URL : '/CNPM', '/'); ?>/";
+    </script>
+    <script src="<?php echo rtrim(defined('BASE_URL') ? BASE_URL : '/CNPM', '/'); ?>/assets/js/order-help.js" defer></script>
+
     <script src="<?php echo BASE_URL; ?>assets/js/iconuser.js"></script>
     <script src="<?php echo BASE_URL; ?>assets/js/menu.js"></script>
     <script src="<?php echo BASE_URL; ?>assets/js/user.js"></script>

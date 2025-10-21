@@ -15,7 +15,12 @@ ob_start();
     LIST_API: '../functions/staff_tables_api.php?action=list',
     ORDER_API: '../functions/staff_order_api.php',
     // File thanh toán nằm trong thư mục STAFF
-    PAYMENT_URL: 'payment.php'
+    PAYMENT_URL: 'payment.php',
+    CALL_API: '../functions/call_staff_api.php',  // thêm dòng này
+    SOUNDS: {
+      order: '../assets/audio/order.mp3', // đổi path nếu cần
+      help:  '../assets/audio/help.mp3'
+    }
   };
 </script>
 

@@ -75,6 +75,36 @@ body{background:var(--bg);}
   background:var(--brand); color:#fff; border-color:#0a66c2;
 }
 
+/* ==== Call-Staff styles (bổ sung) ==== */
+/* Tô viền và nhấn mạnh thẻ bàn đang có cuộc gọi */
+.table-card.has-call{
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(255,154,62,.25) inset;
+}
+/* Đổi màu icon khi có cuộc gọi */
+.table-card.has-call .table-icon{
+  color: var(--orange);
+}
+/* Huy hiệu hiển thị “Gọi nhân viên • Xp” */
+.call-badge{
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  background: rgba(255,154,62,.15);
+  border: 1px solid rgba(255,154,62,.4);
+  color: #b36a21;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+/* Call-Staff highlight */
+.table-card.has-call{ border-color: var(--orange); box-shadow: 0 0 0 2px rgba(255,154,62,.25) inset; }
+.table-card.has-call .table-icon{ color: var(--orange); }
+.call-badge{
+  display:inline-block;margin-top:4px;font-size:12px;
+  background:rgba(255,154,62,.15); border:1px solid rgba(255,154,62,.4);
+  color:#b36a21; padding:2px 8px; border-radius:999px;
+}
+
 /* Responsive */
 @media (max-width: 992px){
   .layout{grid-template-columns:1fr}
