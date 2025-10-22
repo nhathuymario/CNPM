@@ -1,0 +1,136 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+}
+.report-container {
+  max-width: 1100px;
+  margin: 36px auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 28px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+}
+h2 {
+  color: #1976d2;
+  font-size: 24px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.filter-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.filter-form label {
+  font-weight: 600;
+  color: #214c7e;
+}
+.filter-form input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid #b7c2d7;
+  border-radius: 5px;
+  font-size: 15px;
+}
+.btn {
+  padding: 7px 18px;
+  border-radius: 5px;
+  text-decoration: none;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+.btn-primary {
+  background: #1976d2;
+  color: #fff;
+  transition: background 0.18s;
+}
+.btn-primary:hover {
+  background: #1253a4;
+}
+h3 {
+  margin-top: 28px;
+  margin-bottom: 12px;
+  color: #1976d2;
+  font-size: 20px;
+}
+.total-table,
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background: #fff;
+}
+.total-table th,
+.total-table td,
+.details-table th,
+.details-table td {
+  border: 1px solid #e3e8f1;
+  padding: 10px 8px;
+  text-align: center;
+}
+.total-table th,
+.details-table th {
+  background: #f1f7fd;
+  color: #123d6b;
+  font-weight: bold;
+}
+.total-table tr:nth-child(even),
+.details-table tr:nth-child(even) {
+  background: #f8fafc;
+}
+.dish-list {
+  margin: 0;
+  padding: 0 0 0 8px;
+  list-style: none;
+  text-align: left;
+}
+.dish-list li {
+  margin-bottom: 2px;
+  font-size: 15px;
+}
+.dish-list .dish-name {
+  font-weight: 600;
+  color: #1976d2;
+}
+.dish-list .dish-qty {
+  color: #505050;
+  margin-left: 4px;
+  font-weight: 500;
+}
+.dish-list .dish-price {
+  color: #246d23;
+  margin-left: 10px;
+  font-size: 14px;
+}
+@media (max-width: 900px) {
+  .report-container {
+    padding: 18px 4vw;
+  }
+  .filter-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 17px;
+  }
+}
+@media (max-width: 600px) {
+  .report-container {
+    padding: 8px 2vw;
+  }
+  .total-table th,
+  .total-table td,
+  .details-table th,
+  .details-table td {
+    font-size: 13px;
+    padding: 7px 3px;
+  }
+}
