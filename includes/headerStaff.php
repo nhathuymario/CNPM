@@ -50,7 +50,7 @@ $isFloor = ($current === 'floor.php');
         <div class="menu-item user">
           <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
         </div>
-        <div class="menu-item logout" onclick="window.location.href='/functions/logoutStaff.php'">
+        <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/logoutStaff.php'">
           Đăng xuất
         </div>
       </div>

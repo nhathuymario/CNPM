@@ -34,16 +34,16 @@
         </a>
     </div>
     <div class="user-info">
-    <span class="username">
-        <?php echo htmlspecialchars($_SESSION['username']); ?>
-    </span>
-    <span class="dropdown-arrow" onclick="toggleUserMenu()">&#9660;</span>
-    <div id="user-menu" class="user-menu">
+      <span class="username">
+        <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
+      </span>
+      <span class="dropdown-arrow" onclick="toggleUserMenu()">&#9660;</span>
+      <div id="user-menu" class="user-menu">
         <div class="menu-item user">
-            <?php echo htmlspecialchars($_SESSION['username']); ?>
+          <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
         </div>
-        <div class="menu-item logout" onclick="window.location.href='../functions/logoutAdmin.php'">
-            Đăng xuất
+        <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/logoutAdmin.php'">
+          Đăng xuất
         </div>
     </div>
 </div>
