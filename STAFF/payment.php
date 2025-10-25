@@ -47,23 +47,27 @@ $ref_code = ($hasRefCode && !empty($order['ref_code'])) ? $order['ref_code'] : (
 
 // Lấy danh sách tài khoản từ database (bảng payment_accounts)
 $bank_accounts = [];
-  $stmt_acc = $conn->prepare("SELECT id, bank_name, account_number, account_name, emv_gui, note FROM payment_accounts ORDER BY id ASC");
-  if ($stmt_acc) {
-    $stmt_acc->execute();
-    $res_acc = $stmt_acc->get_result();
-    while ($row = $res_acc->fetch_assoc()) {
-      $bank_accounts[] = [
-        'id' => (string)$row['id'],
-        'bank' => $row['bank_name'],
-        'account_name' => $row['account_name'],
-        'account_number' => $row['account_number'],
-        'emv_gui' => $row['emv_gui'],
-        'note' => $row['note']
-      ];
-    }
-    $stmt_acc->close();
+$stmt_acc = $conn->prepare("SELECT id, bank_name, account_number, account_name, emv_gui, note FROM payment_accounts ORDER BY id ASC");
+if ($stmt_acc) {
+  $stmt_acc->execute();
+  $res_acc = $stmt_acc->get_result();
+  while ($row = $res_acc->fetch_assoc()) {
+    $bank_accounts[] = [
+      'id' => (string)$row['id'],
+      'bank' => $row['bank_name'],
+      'account_name' => $row['account_name'],
+      'account_number' => $row['account_number'],
+      'emv_gui' => $row['emv_gui'],
+      'note' => $row['note']
+    ];
   }
+  $stmt_acc->close();
+}
 
+// Nếu không có tài khoản nào, dừng
+if (count($bank_accounts) === 0) {
+  die('Chưa thiết lập tài khoản nhận trong bảng payment_accounts');
+}
 
 // Mặc định chọn tài khoản (param ?bank= có thể là id string)
 $selected_bank_id = isset($_GET['bank']) ? $_GET['bank'] : $bank_accounts[0]['id'];
@@ -106,6 +110,12 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
     .bank-info strong { font-weight:700; }
     label.select-label { display:block; margin-bottom:8px; color:#495057; font-weight:600; }
     .inline-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    /* QR area */
+    #qr-area { margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    #qrcode { width:220px; height:220px; padding:10px; background:#fff; border:1px solid #e6e8ee; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+    #qr-meta { max-width:420px; font-size:14px; color:#333; }
+    #qr-meta p { margin:6px 0; }
+    .small-muted { color:#6b7280; font-size:13px; }
   </style>
 </head>
 <body>
@@ -113,8 +123,7 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
     <h2>Thanh toán chuyển khoản cho đơn #<?php echo htmlspecialchars($order_id); ?></h2>
     <p>Tầng: <strong><?php echo htmlspecialchars($floor); ?></strong></p>
     <p>Bàn: <strong><?php echo htmlspecialchars($order['table_number']); ?></strong></p>
-    <p>Số tiền: <strong><?php echo number_format($order['total']); ?> đ</strong></p>
-    <p>Phương thức hiện tại: <strong><?php echo htmlspecialchars($order['payment_method']); ?></strong></p>
+    <p>Số tiền: <strong id="display-amount"><?php echo number_format($order['total']); ?> đ</strong></p>
     <hr>
 
     <!-- Dropdown chọn tài khoản nhận (lấy từ DB) -->
@@ -145,6 +154,25 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
       <p>Nội dung: <strong id="display-ref"><?php echo htmlspecialchars($ref_code); ?></strong> (vui lòng ghi đúng để đối soát)</p>
     </div>
 
+    <!-- QR area: hiển thị server-generated QR PNG (api.qrserver.com redirect) -->
+    <div id="qr-area" aria-live="polite">
+      <div id="qrcode" aria-hidden="false">
+        <img id="server-qr" src="<?php echo '../functions/qr.php?order_id=' . urlencode($order_id) . '&bank_account_id=' . urlencode($selected_account['id']); ?>" alt="QR code" style="max-width:100%; height:auto; display:block" />
+      </div>
+      <div id="qr-meta">
+        <p><strong>Quét để chuyển khoản</strong></p>
+        <p class="small-muted">Quý khách có thể mở ứng dụng ngân hàng, chọn "Quét mã QR" và thanh toán trực tiếp.</p>
+        <p><strong>Số tiền:</strong> <span id="meta-amount"><?php echo number_format($order['total']); ?> đ</span></p>
+        <p><strong>Nội dung:</strong> <span id="meta-ref"><?php echo htmlspecialchars($ref_code); ?></span></p>
+        <p><strong>Ngân hàng:</strong> <span id="meta-bank"><?php echo htmlspecialchars($BANK_NAME); ?></span></p>
+        <p style="margin-top:8px">
+          <a id="download-qr" class="btn" href="<?php echo '../functions/qr.php?order_id=' . urlencode($order_id) . '&bank_account_id=' . urlencode($selected_account['id']); ?>" download="order-<?php echo (int)$order_id; ?>-qr.png">Tải QR (PNG)</a>
+          <button id="toggle-payload" class="btn">Xem payload</button>
+        </p>
+        <pre id="payload-view" style="display:none; background:#fafafa; padding:8px; border:1px solid #eee; border-radius:6px; white-space:pre-wrap;"></pre>
+      </div>
+    </div>
+
     <div class="hint">Sau khi khách chuyển khoản xong, bấm “Xác nhận đã nhận tiền” để hoàn tất (lưu payment_method=bank). Bạn có thể thay đổi tài khoản nhận bằng menu phía trên.</div>
 
     <div class="status" style="margin-top:10px">
@@ -161,36 +189,118 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
     </div>
   </div>
 
+  <!-- QR library (client-side) - kept to allow showing payload preview in page if needed -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
   <script>
     (function(){
       const ORDER_ID = <?php echo (int)$order_id; ?>;
       const BASE_URL = <?php echo json_encode($baseUrl); ?>;
+      const ORDER_TOTAL = <?php echo (int)$order['total']; ?>;
+      const REF_CODE = <?php echo json_encode($ref_code); ?>;
+      const BANK_ACCOUNTS = <?php echo json_encode($bank_accounts, JSON_UNESCAPED_UNICODE); ?>;
 
       const btnConfirm = document.getElementById('btn-confirm-received');
       const btnBack    = document.getElementById('btn-back');
       const statusEl   = document.getElementById('pay-status');
       const pillEl     = document.getElementById('status-pill');
 
-      // Elements for bank info
+      // Elements for bank info & QR
       const bankSelect = document.getElementById('bank-select');
       const displayBank = document.getElementById('display-bank');
       const displayName = document.getElementById('display-name');
       const displayNumber = document.getElementById('display-number');
       const displayRef = document.getElementById('display-ref');
+      const serverQrImg = document.getElementById('server-qr');
+      const payloadView = document.getElementById('payload-view');
+      const togglePayloadBtn = document.getElementById('toggle-payload');
+      const downloadQrLink = document.getElementById('download-qr');
 
-      // Khi thay đổi chọn tài khoản, cập nhật giao diện
+      function getSelectedAccount() {
+        const opt = bankSelect.selectedOptions[0];
+        return {
+          id: opt ? opt.value : BANK_ACCOUNTS[0].id,
+          bank: opt ? opt.getAttribute('data-bank') : BANK_ACCOUNTS[0].bank,
+          account_name: opt ? opt.getAttribute('data-name') : BANK_ACCOUNTS[0].account_name,
+          account_number: opt ? opt.getAttribute('data-number') : BANK_ACCOUNTS[0].account_number,
+          emv_gui: opt ? opt.getAttribute('data-emv') : BANK_ACCOUNTS[0].emv_gui,
+          note: opt ? opt.getAttribute('data-note') : BANK_ACCOUNTS[0].note
+        };
+      }
+
+      // When account selection changes: update displayed metadata and server QR img src
+      function updateAfterBankChange() {
+        const acc = getSelectedAccount();
+        displayBank.textContent = acc.bank;
+        displayName.textContent = acc.account_name;
+        displayNumber.textContent = acc.account_number;
+        displayRef.textContent = REF_CODE;
+        document.getElementById('meta-amount').textContent = new Intl.NumberFormat('vi-VN').format(ORDER_TOTAL) + ' đ';
+        document.getElementById('meta-ref').textContent = REF_CODE;
+        document.getElementById('meta-bank').textContent = acc.bank;
+
+        // Update server QR image src (prevent caching by timestamp)
+        const src = `../functions/qr.php?order_id=${ORDER_ID}&bank_account_id=${encodeURIComponent(acc.id)}&_=${Date.now()}`;
+        serverQrImg.src = src;
+        downloadQrLink.href = src;
+      }
+
+      // Build EMV-like payload locally for "Xem payload" preview (same rules as server)
+      function crc16ccitt(str) {
+        const data = new TextEncoder().encode(str);
+        let crc = 0xFFFF;
+        for (let i = 0; i < data.length; i++) {
+          crc ^= (data[i] << 8);
+          for (let j = 0; j < 8; j++) {
+            crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+          }
+        }
+        return crc & 0xFFFF;
+      }
+      function tlv(id, value) {
+        const len = String(value.length).padStart(2, '0');
+        return id + len + value;
+      }
+      function buildEmvPayload({ gui, accountNumber, accountName, amount, ref }) {
+        let payload = tlv('00', '01');
+        payload += tlv('01', '11');
+        const mai = tlv('00', (gui || 'com.example.pay')) + tlv('01', accountNumber || '') + tlv('02', accountName || '');
+        payload += tlv('26', mai);
+        payload += tlv('52', '0000');
+        payload += tlv('53', '704');
+        if (amount && amount > 0) payload += tlv('54', (amount).toString());
+        payload += tlv('58', 'VN');
+        payload += tlv('59', accountName ? accountName.slice(0,25) : 'KHACH');
+        payload += tlv('60', 'HO CHI MINH');
+        payload += tlv('62', tlv('01', ref || ''));
+        const payloadForCrc = payload + '63' + '04';
+        const crc = crc16ccitt(payloadForCrc).toString(16).toUpperCase().padStart(4, '0');
+        payload += '63' + '04' + crc;
+        return payload;
+      }
+
+      // Toggle payload preview (we compute locally to match server)
+      togglePayloadBtn.addEventListener('click', function(){
+        if (payloadView.style.display === 'none') {
+          const acc = getSelectedAccount();
+          // choose gui from emv field if present
+          const gui = (acc.emv_gui && acc.emv_gui.trim().length > 0) ? acc.emv_gui : acc.bank.replace(/\s+/g,'').toLowerCase();
+          const payload = buildEmvPayload({ gui, accountNumber: acc.account_number, accountName: acc.account_name, amount: ORDER_TOTAL, ref: REF_CODE });
+          payloadView.textContent = payload;
+          payloadView.style.display = 'block';
+        } else {
+          payloadView.style.display = 'none';
+        }
+      });
+
       if (bankSelect) {
         bankSelect.addEventListener('change', function(){
-          const opt = bankSelect.selectedOptions[0];
-          const bank = opt.getAttribute('data-bank') || '';
-          const name = opt.getAttribute('data-name') || '';
-          const number = opt.getAttribute('data-number') || '';
-          displayBank.textContent = bank;
-          displayName.textContent = name;
-          displayNumber.textContent = number;
-          // Nếu muốn có note/emv để hiển thị, có thể truy xuất opt.getAttribute('data-note')
+          updateAfterBankChange();
         });
       }
+
+      // initial
+      updateAfterBankChange();
 
       if (btnBack) {
         btnBack.addEventListener('click', function(e){
@@ -209,7 +319,6 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
         btnConfirm.addEventListener('click', async () => {
           btnConfirm.disabled = true;
           try {
-            // Lấy tài khoản hiện tại đang chọn để gửi kèm (nếu backend cần)
             const opt = bankSelect.selectedOptions[0];
             const appliedBankId = opt ? opt.value : '';
             const appliedBank = opt ? opt.getAttribute('data-bank') : '';
@@ -233,7 +342,6 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
             statusEl.textContent = 'paid';
             pillEl.textContent   = 'Đã thanh toán';
             btnConfirm.textContent = 'Đã thanh toán';
-            console.log('applied_payment_method:', data.applied_payment_method);
 
             let notified = false;
             try { if (window.opener && !window.opener.closed) { window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; } } catch (e) {}

@@ -122,7 +122,7 @@
       currCallOpenIds.forEach((id) => seenCallOpenIds.add(id));
     }
 
-    // Nhận kết quả từ payment.php
+    // Nhận kết quả từ payment.php (global listener, không dùng alert nữa)
     window.addEventListener("message", async (ev) => {
       const d = ev && ev.data;
       if (!d || typeof d !== "object") return;
@@ -131,16 +131,21 @@
           try {
             const url = `${ORDER_API}?action=mark_paid&order_id=${encodeURIComponent(
               d.order_id
-            )}&method=bank`;
+            )}&method=bank_transfer`;
             const resp = await fetch(url, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ order_id: d.order_id, method: "bank" }),
+              body: JSON.stringify({
+                order_id: d.order_id,
+                method: "bank_transfer",
+              }),
             });
             try {
               await jsonOrText(resp);
             } catch {}
-          } catch {}
+          } catch (err) {
+            // ignore network errors here
+          }
           try {
             if (lastData && Array.isArray(lastData.tables)) {
               const t = lastData.tables.find(
@@ -148,14 +153,17 @@
                   x.current_order &&
                   Number(x.current_order.id) === Number(d.order_id)
               );
-              if (t?.current_order) t.current_order.payment_method = "bank";
+              if (t?.current_order)
+                t.current_order.payment_method = "bank_transfer";
             }
           } catch {}
         }
         await refresh();
         const bd = document.getElementById("detail-backdrop");
         if (bd) bd.style.display = "none";
-        alert("Đã xác nhận thanh toán (chuyển khoản).");
+
+        // Không dùng alert (popup). Ghi log thay thế:
+        console.info("staff-payment-success received", d.order_id);
       }
     });
 
@@ -558,7 +566,7 @@
             throw new Error(data.message || "Thanh toán thất bại");
           await refresh();
           backdrop.style.display = "none";
-          alert("Đã xác nhận thanh toán (tiền mặt).");
+          // alert removed: no confirmation popup for cash payments
         } catch (e) {
           alert(e.message || "Có lỗi xảy ra.");
         } finally {
@@ -579,46 +587,7 @@
         });
       }
 
-      // Nhận kết quả từ payment.php
-      window.addEventListener("message", async (ev) => {
-        const d = ev && ev.data;
-        if (!d || typeof d !== "object") return;
-        if (d.type === "staff-payment-success") {
-          if (d.order_id) {
-            try {
-              const url = `${ORDER_API}?action=mark_paid&order_id=${encodeURIComponent(
-                d.order_id
-              )}&method=bank_transfer`;
-              const resp = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  order_id: d.order_id,
-                  method: "bank_transfer",
-                }),
-              });
-              try {
-                await jsonOrText(resp);
-              } catch {}
-            } catch {}
-            try {
-              if (lastData && Array.isArray(lastData.tables)) {
-                const t = lastData.tables.find(
-                  (x) =>
-                    x.current_order &&
-                    Number(x.current_order.id) === Number(d.order_id)
-                );
-                if (t?.current_order)
-                  t.current_order.payment_method = "bank_transfer";
-              }
-            } catch {}
-          }
-          await refresh();
-          const bd = document.getElementById("detail-backdrop");
-          if (bd) bd.style.display = "none";
-          alert("Đã xác nhận thanh toán (chuyển khoản).");
-        }
-      });
+      // NOTE: removed inner window.message listener here (handled by the global listener above)
 
       wireCallButtons(table);
     }

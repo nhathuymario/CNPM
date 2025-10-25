@@ -134,3 +134,46 @@ h3 {
     padding: 7px 3px;
   }
 }
+
+/* Nhỏ gọn cho hai ô filter payment */
+.payment-filters {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0;
+}
+.pay-box {
+  flex: 1;
+  border: 1px solid #eee;
+  background-color: #daad77;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+.pay-box.active {
+  background-color: #8ebce5;
+  border-color: #0b72cf;
+  box-shadow: 0 1px 0 rgba(11, 114, 207, 0.08);
+}
+.pay-box .label {
+  font-size: 18px;
+  color: #444;
+  display: block;
+  margin-bottom: 6px;
+}
+.pay-box .count {
+  font-size: 20px;
+  color: #0b72cf;
+  font-weight: 700;
+  display: block;
+}
+.pay-box .amount {
+  font-size: 14px;
+  color: #666;
+  margin-top: 6px;
+}
+.pay-icon {
+  font-size: 22px;
+  display: block;
+  margin-bottom: 6px;
+}
