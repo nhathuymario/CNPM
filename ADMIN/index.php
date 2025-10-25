@@ -68,53 +68,57 @@ if (isset($_GET['edit_id'])) {
 ob_start();
 ?>
 
-<div class="container">
+<div class="menu-management-container">
+  <!-- Form bên trái -->
+  <div class="menu-form">
     <h2>Quản lý món ăn</h2>
-    <!-- Form thêm/sửa món -->
     <form method="post">
-        <div class="form-group">
-            <label>Tên món:</label>
-            <input type="text" name="name" required value="<?php echo $edit_dish ? $edit_dish['name'] : ''; ?>">
-        </div>
-        <div class="form-group">
-            <label>Giá (vnđ):</label>
-            <input type="number" name="price" required value="<?php echo $edit_dish ? $edit_dish['price'] : ''; ?>">
-        </div>
-        <div class="form-group">
-            <label>Ảnh (đường dẫn):</label>
-            <input type="text" name="image" required value="<?php echo $edit_dish ? $edit_dish['image'] : ''; ?>">
-        </div>
-        <?php if ($edit_dish): ?>
-            <input type="hidden" name="id" value="<?php echo $edit_dish['id']; ?>">
-            <input type="submit" name="edit_dish" value="Lưu sửa">
-            <a href="dishes.php" style="margin-left:12px;">Hủy</a>
-        <?php else: ?>
-            <input type="submit" name="add_dish" value="Thêm món">
-        <?php endif; ?>
+      <div class="form-group">
+        <label>Tên món:</label>
+        <input type="text" name="name" required value="<?php echo $edit_dish ? $edit_dish['name'] : ''; ?>">
+      </div>
+      <div class="form-group">
+        <label>Giá (vnđ):</label>
+        <input type="number" name="price" required value="<?php echo $edit_dish ? $edit_dish['price'] : ''; ?>">
+      </div>
+      <div class="form-group">
+        <label>Ảnh (đường dẫn):</label>
+        <input type="text" name="image" required value="<?php echo $edit_dish ? $edit_dish['image'] : ''; ?>">
+      </div>
+      <?php if ($edit_dish): ?>
+        <input type="hidden" name="id" value="<?php echo $edit_dish['id']; ?>">
+        <input type="submit" name="edit_dish" value="Lưu sửa">
+        <a href="index.php" class="btn-cancel">Hủy</a>
+      <?php else: ?>
+        <input type="submit" name="add_dish" value="Thêm món">
+      <?php endif; ?>
     </form>
-    <hr>
-    <!-- Bảng món ăn -->
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Tên món</th>
-            <th>Giá</th>
-            <th>Ảnh</th>
-            <th>Thao tác</th>
-        </tr>
-        <?php foreach($dishes as $dish): ?>
-        <tr>
-            <td><?php echo $dish['id']; ?></td>
-            <td><?php echo $dish['name']; ?></td>
-            <td><?php echo number_format($dish['price']); ?>đ</td>
-            <td><img src="<?php echo $dish['image']; ?>" class="dish-img"></td>
-            <td>
-                <a class="btn btn-edit" href="index.php?edit_id=<?php echo $dish['id']; ?>">Sửa</a>
-                <a class="btn btn-delete" href="index.php?delete_id=<?php echo $dish['id']; ?>" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
+  </div>
+
+  <!-- Bảng bên phải -->
+  <div class="menu-list-section">
+    <table class="menu-list">
+      <tr>
+        <th>ID</th>
+        <th>Tên món</th>
+        <th>Giá</th>
+        <th>Ảnh</th>
+        <th>Thao tác</th>
+      </tr>
+      <?php foreach($dishes as $dish): ?>
+      <tr>
+        <td><?php echo $dish['id']; ?></td>
+        <td><?php echo $dish['name']; ?></td>
+        <td><?php echo number_format($dish['price']); ?>đ</td>
+        <td><img src="<?php echo $dish['image']; ?>" class="dish-img"></td>
+        <td>
+          <a class="btn btn-edit" href="index.php?edit_id=<?php echo $dish['id']; ?>">Sửa</a>
+          <a class="btn btn-delete" href="index.php?delete_id=<?php echo $dish['id']; ?>" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+        </td>
+      </tr>
+      <?php endforeach; ?>
     </table>
+  </div>
 </div>
 
 
