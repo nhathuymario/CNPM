@@ -202,7 +202,6 @@ if ($method==='POST' && $action==='mark_paid'){
 
     db_exec($dbc,$dbType,$sql,$params);
     db_exec($dbc,$dbType,"UPDATE tables SET status='available' WHERE table_number = ?",[(int)$order['table_number']]);
-
     if ($dbType==='pdo') $dbc->commit(); else $dbc->commit();
     echo json_encode(['success'=>true,'message'=>'Đã xác nhận thanh toán và trả bàn về trống.','applied_payment_method'=>$paidMethod ?? null]);
   }catch(Throwable $e){

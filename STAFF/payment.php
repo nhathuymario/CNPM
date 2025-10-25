@@ -45,10 +45,38 @@ $isPaid = ($payment_status === 'paid');
 // Mã tham chiếu
 $ref_code = ($hasRefCode && !empty($order['ref_code'])) ? $order['ref_code'] : ('CF' . strtoupper(dechex($order['id'])) . '-' . date('d'));
 
-// Thông tin tài khoản nhận
-$BANK_ACCOUNT_NAME   = 'CALM SPACE';
-$BANK_ACCOUNT_NUMBER = '0367903437';
-$BANK_NAME           = 'VPBank';
+// Lấy danh sách tài khoản từ database (bảng payment_accounts)
+$bank_accounts = [];
+  $stmt_acc = $conn->prepare("SELECT id, bank_name, account_number, account_name, emv_gui, note FROM payment_accounts ORDER BY id ASC");
+  if ($stmt_acc) {
+    $stmt_acc->execute();
+    $res_acc = $stmt_acc->get_result();
+    while ($row = $res_acc->fetch_assoc()) {
+      $bank_accounts[] = [
+        'id' => (string)$row['id'],
+        'bank' => $row['bank_name'],
+        'account_name' => $row['account_name'],
+        'account_number' => $row['account_number'],
+        'emv_gui' => $row['emv_gui'],
+        'note' => $row['note']
+      ];
+    }
+    $stmt_acc->close();
+  }
+
+
+// Mặc định chọn tài khoản (param ?bank= có thể là id string)
+$selected_bank_id = isset($_GET['bank']) ? $_GET['bank'] : $bank_accounts[0]['id'];
+$selected_account = null;
+foreach ($bank_accounts as $acc) {
+  if ((string)$acc['id'] === (string)$selected_bank_id) { $selected_account = $acc; break; }
+}
+if (!$selected_account) $selected_account = $bank_accounts[0];
+
+// Thiết lập biến hiển thị mặc định
+$BANK_NAME = $selected_account['bank'];
+$BANK_ACCOUNT_NAME = $selected_account['account_name'];
+$BANK_ACCOUNT_NUMBER = $selected_account['account_number'];
 
 // BASE_URL
 $baseUrl = '/';
@@ -66,12 +94,18 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>assets/css/payment.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { background:#f7f9fc; }
+    body { background:#f7f9fc; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#222; }
     .payment-container{ max-width:680px; margin:20px auto; background:#fff; border:1px solid #e6e8ee; border-radius:12px; padding:18px 20px; }
     .btn{padding:8px 12px;border-radius:8px;border:1px solid #d0d7de;background:#fff;cursor:pointer}
     .btn-primary{background:#0b72cf;color:#fff;border-color:#0a66c2}
     .status-pill{display:inline-block;padding:2px 8px;border:1px solid #d0d7de;border-radius:999px;margin-left:6px}
     .hint{margin:10px 0; color:#5b6574; background:#f9fbff; border:1px dashed #cfe0ff; padding:8px 10px; border-radius:8px;}
+    .bank-select { width:100%; max-width:520px; padding:10px 12px; border-radius:8px; border:1px solid #d0d7de; background:#fff; }
+    .bank-info { margin-top:12px; }
+    .bank-info p { margin:6px 0; font-size:16px; }
+    .bank-info strong { font-weight:700; }
+    label.select-label { display:block; margin-bottom:8px; color:#495057; font-weight:600; }
+    .inline-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
   </style>
 </head>
 <body>
@@ -82,13 +116,36 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
     <p>Số tiền: <strong><?php echo number_format($order['total']); ?> đ</strong></p>
     <p>Phương thức hiện tại: <strong><?php echo htmlspecialchars($order['payment_method']); ?></strong></p>
     <hr>
-    <h3>Thông tin chuyển khoản</h3>
-    <p>Ngân hàng: <strong><?php echo htmlspecialchars($BANK_NAME); ?></strong></p>
-    <p>Chủ TK: <strong><?php echo htmlspecialchars($BANK_ACCOUNT_NAME); ?></strong></p>
-    <p>Số TK: <strong><?php echo htmlspecialchars($BANK_ACCOUNT_NUMBER); ?></strong></p>
-    <p>Nội dung: <strong><?php echo htmlspecialchars($ref_code); ?></strong> (vui lòng ghi đúng để đối soát)</p>
 
-    <div class="hint">Sau khi khách chuyển khoản xong, bấm “Xác nhận đã nhận tiền” để hoàn tất (lưu payment_method=bank).</div>
+    <!-- Dropdown chọn tài khoản nhận (lấy từ DB) -->
+    <div>
+      <label class="select-label" for="bank-select">Chọn tài khoản nhận:</label>
+      <select id="bank-select" class="bank-select" aria-label="Chọn tài khoản nhận">
+        <?php foreach ($bank_accounts as $acc): ?>
+          <option
+            value="<?php echo htmlspecialchars($acc['id']); ?>"
+            data-bank="<?php echo htmlspecialchars($acc['bank']); ?>"
+            data-name="<?php echo htmlspecialchars($acc['account_name']); ?>"
+            data-number="<?php echo htmlspecialchars($acc['account_number']); ?>"
+            data-emv="<?php echo htmlspecialchars($acc['emv_gui'] ?? ''); ?>"
+            data-note="<?php echo htmlspecialchars($acc['note'] ?? ''); ?>"
+            <?php echo ((string)$acc['id'] === (string)$selected_account['id']) ? 'selected' : ''; ?>
+          >
+            <?php echo htmlspecialchars($acc['bank'] . ' • ' . $acc['account_number'] . ' • ' . $acc['account_name']); ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+
+    <div class="bank-info" id="bank-info">
+      <h3>Thông tin chuyển khoản</h3>
+      <p>Ngân hàng: <strong id="display-bank"><?php echo htmlspecialchars($BANK_NAME); ?></strong></p>
+      <p>Chủ TK: <strong id="display-name"><?php echo htmlspecialchars($BANK_ACCOUNT_NAME); ?></strong></p>
+      <p>Số TK: <strong id="display-number"><?php echo htmlspecialchars($BANK_ACCOUNT_NUMBER); ?></strong></p>
+      <p>Nội dung: <strong id="display-ref"><?php echo htmlspecialchars($ref_code); ?></strong> (vui lòng ghi đúng để đối soát)</p>
+    </div>
+
+    <div class="hint">Sau khi khách chuyển khoản xong, bấm “Xác nhận đã nhận tiền” để hoàn tất (lưu payment_method=bank). Bạn có thể thay đổi tài khoản nhận bằng menu phía trên.</div>
 
     <div class="status" style="margin-top:10px">
       Trạng thái thanh toán:
@@ -114,6 +171,27 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
       const statusEl   = document.getElementById('pay-status');
       const pillEl     = document.getElementById('status-pill');
 
+      // Elements for bank info
+      const bankSelect = document.getElementById('bank-select');
+      const displayBank = document.getElementById('display-bank');
+      const displayName = document.getElementById('display-name');
+      const displayNumber = document.getElementById('display-number');
+      const displayRef = document.getElementById('display-ref');
+
+      // Khi thay đổi chọn tài khoản, cập nhật giao diện
+      if (bankSelect) {
+        bankSelect.addEventListener('change', function(){
+          const opt = bankSelect.selectedOptions[0];
+          const bank = opt.getAttribute('data-bank') || '';
+          const name = opt.getAttribute('data-name') || '';
+          const number = opt.getAttribute('data-number') || '';
+          displayBank.textContent = bank;
+          displayName.textContent = name;
+          displayNumber.textContent = number;
+          // Nếu muốn có note/emv để hiển thị, có thể truy xuất opt.getAttribute('data-note')
+        });
+      }
+
       if (btnBack) {
         btnBack.addEventListener('click', function(e){
           try {
@@ -129,15 +207,24 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
 
       if (btnConfirm) {
         btnConfirm.addEventListener('click', async () => {
-          // disable immediately to avoid double clicks
           btnConfirm.disabled = true;
           try {
-            // Gửi cả body và query để fallback chắc chắn
+            // Lấy tài khoản hiện tại đang chọn để gửi kèm (nếu backend cần)
+            const opt = bankSelect.selectedOptions[0];
+            const appliedBankId = opt ? opt.value : '';
+            const appliedBank = opt ? opt.getAttribute('data-bank') : '';
+            const appliedNumber = opt ? opt.getAttribute('data-number') : '';
             const url = `../functions/staff_order_api.php?action=mark_paid&order_id=${ORDER_ID}&method=bank`;
             const resp = await fetch(url, {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ order_id: ORDER_ID, method: 'bank' })
+              body: JSON.stringify({
+                order_id: ORDER_ID,
+                method: 'bank',
+                bank_id: appliedBankId,
+                bank_name: appliedBank,
+                bank_number: appliedNumber
+              })
             });
             const ct = (resp.headers.get('content-type') || '').toLowerCase();
             const data = ct.includes('application/json') ? await resp.json() : { success:false, message: await resp.text() };
@@ -148,60 +235,12 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
             btnConfirm.textContent = 'Đã thanh toán';
             console.log('applied_payment_method:', data.applied_payment_method);
 
-            // Notify opener only once per order.
-            // If same-origin, we use a small shared object on opener to track handled orders.
             let notified = false;
-            try {
-              if (window.opener && !window.opener.closed) {
-                try {
-                  // If opener doesn't have tracking object, create it
-                  if (!window.opener.__sf_handled_payments) {
-                    try { window.opener.__sf_handled_payments = {}; } catch(e) { /* ignore cross-origin write errors */ }
-                  }
-                  // If tracking object exists and this order not marked, mark & postMessage
-                  if (window.opener.__sf_handled_payments && !window.opener.__sf_handled_payments[ORDER_ID]) {
-                    try {
-                      window.opener.__sf_handled_payments[ORDER_ID] = true;
-                    } catch(e) {
-                      // ignore if cannot write to opener
-                    }
-                    window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*');
-                    notified = true;
-                  } else {
-                    // If tracking object not writable or already set, still attempt postMessage,
-                    // but avoid double-sending from this window
-                    // To be safe, only postMessage if not previously sent by this window
-                    if (!window.__sf_sent_payment_for || window.__sf_sent_payment_for !== ORDER_ID) {
-                      window.postMessage({ type: 'staff-payment-success-local', order_id: ORDER_ID }, '*'); // local-only fallback
-                      // set a local flag so this window won't send again
-                      window.__sf_sent_payment_for = ORDER_ID;
-                      // try to also notify opener (best-effort)
-                      try { if (window.opener && !window.opener.closed) window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; } catch(e){}
-                    } else {
-                      console.debug('This window already sent local payment message for order', ORDER_ID);
-                    }
-                  }
-                } catch(e) {
-                  // some browsers may prevent writing to opener object if cross-origin;
-                  // fallback to simple postMessage only once per this window
-                  if (!window.__sf_sent_payment_for || window.__sf_sent_payment_for !== ORDER_ID) {
-                    try { window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; window.__sf_sent_payment_for = ORDER_ID; }
-                    catch(er){ console.warn('Cannot postMessage to opener:', er); }
-                  } else {
-                    console.debug('This window already posted message for order', ORDER_ID);
-                  }
-                }
-              }
-            } catch (e) {
-              console.warn('Notify opener failed', e);
-            }
-
-            // Close or redirect back to floor
+            try { if (window.opener && !window.opener.closed) { window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; } } catch (e) {}
             if (notified) { window.close(); setTimeout(()=>{ location.href = BASE_URL + 'STAFF/floor.php'; }, 500); }
             else { location.href = BASE_URL + 'STAFF/floor.php'; }
           } catch (e) {
             alert(e.message || 'Có lỗi xảy ra.');
-            // Re-enable so staff có thể thử lại
             btnConfirm.disabled = false;
           }
         });
