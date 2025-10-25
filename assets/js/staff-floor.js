@@ -79,9 +79,24 @@
     }
     window.addEventListener("pointerdown", unlockAudioOnce, { once: true });
     window.addEventListener("keydown", unlockAudioOnce, { once: true });
+
+    // Phát hiện sự kiện
     let firstBootSeeded = false;
     const seenOrderIds = new Set();
     const seenCallOpenIds = new Set();
+
+    // Dấu hiệu "vừa thêm món" (highlight bàn khi đơn hiện tại tăng tổng tiền)
+    const ADDED_TTL_MS = 2 * 60 * 1000; // 2 phút
+    const orderTotalsSeen = new Map();   // order_id -> last total
+    const orderAddedFlash = new Map();   // order_id -> expire timestamp
+
+    function cleanupAddedFlash() {
+      const now = Date.now();
+      for (const [id, ts] of orderAddedFlash.entries()) {
+        if (now > ts) orderAddedFlash.delete(id);
+      }
+    }
+
     function playOrderSound() {
       const a = audioPlayers.order;
       if (a) {
@@ -100,27 +115,96 @@
         } catch {}
       }
     }
+
     function detectEvents(newData) {
       const tables = Array.isArray(newData?.tables) ? newData.tables : [];
-      const currOrderIds = [],
-        currCallOpenIds = [];
+
+      const currentOrderIds = [];
+      const currentCallOpenIds = [];
+      const currentOrderTotals = []; // {id,total}
+
       for (const t of tables) {
-        if (t?.current_order?.id) currOrderIds.push(Number(t.current_order.id));
-        if (t?.has_call && t?.call && t.call.status === "open" && t.call.id)
-          currCallOpenIds.push(Number(t.call.id));
+        if (t?.current_order?.id) {
+          const oid = Number(t.current_order.id);
+          currentOrderIds.push(oid);
+          currentOrderTotals.push({ id: oid, total: Number(t.current_order.total || 0) });
+        }
+        if (t?.has_call && t?.call && t.call.status === "open" && t.call.id) {
+          currentCallOpenIds.push(Number(t.call.id));
+        }
       }
+
+      // Lần đầu seed: không phát âm cũng không highlight
       if (!firstBootSeeded) {
-        currOrderIds.forEach((id) => seenOrderIds.add(id));
-        currCallOpenIds.forEach((id) => seenCallOpenIds.add(id));
+        currentOrderIds.forEach((id) => seenOrderIds.add(id));
+        currentCallOpenIds.forEach((id) => seenCallOpenIds.add(id));
+        currentOrderTotals.forEach(({ id, total }) => orderTotalsSeen.set(id, total));
         firstBootSeeded = true;
         return;
       }
-      if (currOrderIds.some((id) => !seenOrderIds.has(id))) playOrderSound();
-      if (currCallOpenIds.some((id) => !seenCallOpenIds.has(id)))
-        playHelpSound();
-      currOrderIds.forEach((id) => seenOrderIds.add(id));
-      currCallOpenIds.forEach((id) => seenCallOpenIds.add(id));
+
+      // Sự kiện "đơn mới" và "call mới"
+      const newOrders = currentOrderIds.filter((id) => !seenOrderIds.has(id));
+      const newCalls = currentCallOpenIds.filter((id) => !seenCallOpenIds.has(id));
+      if (newOrders.length > 0) playOrderSound();
+      if (newCalls.length > 0) playHelpSound();
+      currentOrderIds.forEach((id) => seenOrderIds.add(id));
+      currentCallOpenIds.forEach((id) => seenCallOpenIds.add(id));
+
+      // Sự kiện "vừa thêm món": total tăng so với lần trước
+      const now = Date.now();
+      for (const { id, total } of currentOrderTotals) {
+        const prev = orderTotalsSeen.has(id) ? Number(orderTotalsSeen.get(id)) : undefined;
+        if (prev !== undefined && total > prev) {
+          orderAddedFlash.set(id, now + ADDED_TTL_MS);
+        }
+        orderTotalsSeen.set(id, total);
+      }
+      cleanupAddedFlash();
     }
+
+    // CSS cho badge "Món mới"
+    function ensureAddedBadgeStyles() {
+      if (document.getElementById("sf-added-badge-style")) return;
+      const css = `
+        .table-card { position: relative; }
+        .table-card.added-now {
+          box-shadow: 0 0 0 2px #22c55e inset;
+          border-radius: 12px;
+        }
+        .table-card.added-now::after {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: 12px;
+          border: 2px solid rgba(34,197,94,0.55);
+          animation: sfPulseAdded 1.6s ease-out infinite;
+          pointer-events: none;
+        }
+        @keyframes sfPulseAdded {
+          0% { opacity: 0.9; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.03); }
+        }
+        .badge-added {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          background: #16a34a;
+          color: #fff;
+          font-size: 11px;
+          line-height: 1;
+          padding: 4px 6px;
+          border-radius: 999px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+          z-index: 1;
+        }
+      `;
+      const style = document.createElement("style");
+      style.id = "sf-added-badge-style";
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+    ensureAddedBadgeStyles();
 
     // Nhận kết quả từ payment.php
     window.addEventListener("message", async (ev) => {
@@ -164,11 +248,10 @@
     }
     function fmtMoney(v) {
       try {
-        // Hiện thị theo locale vi-VN, không hiện thập phân (đối với tiền VNĐ)
         const formatted = new Intl.NumberFormat("vi-VN", {
           maximumFractionDigits: 0,
         }).format(v);
-        return formatted + "\u00A0đ"; // dùng non-breaking space trước 'đ' để tránh xuống dòng tách 'đ'
+        return formatted + "\u00A0đ";
       } catch {
         return String(v) + "\u00A0đ";
       }
@@ -237,12 +320,25 @@
         grid.appendChild(div);
         return;
       }
+
+      const now = Date.now();
+
       tables.forEach((t) => {
         const statusClass = t.is_busy ? "serving" : "available";
         const hasCall = !!t.has_call;
+
         const card = document.createElement("div");
         card.className =
           `table-card ${statusClass}` + (hasCall ? " has-call" : "");
+
+        // Bàn vừa thêm món? (flash theo order_id)
+        let addedNow = false;
+        const oid = t?.current_order?.id ? Number(t.current_order.id) : null;
+        if (oid && orderAddedFlash.has(oid) && now < orderAddedFlash.get(oid)) {
+          addedNow = true;
+          card.classList.add("added-now");
+        }
+
         const callLine = hasCall
           ? `<div class="call-badge">${
               t.call.status === "open" ? "Gọi nhân viên" : "Đang tiếp nhận"
@@ -257,11 +353,16 @@
             t.current_order.total
           )}</div>`
           : "";
+
+        const addedBadge = addedNow ? `<span class="badge-added">Món mới</span>` : "";
+
         card.innerHTML = `${iconTable()}
+          ${addedBadge}
           <div class="table-meta"><span><strong>Bàn ${
             t.table_number
           }</strong></span><span>•</span><span>Tầng ${t.floor}</span></div>
           ${callLine}${orderInfo}`;
+
         card.onclick = () => openDetail(t);
         grid.appendChild(card);
       });
@@ -372,27 +473,16 @@
       const o = table.current_order;
 
       // Styles + colgroup để canh đều cột
-      // Thay thế tableStyles hiện tại bằng đoạn dưới đây (trong staff-floor.js)
       const tableStyles = `
-<style>
-    .sf-detail-table { width:100%; border-collapse:collapse; table-layout:auto; }
-    .sf-detail-table th, .sf-detail-table td {
-      padding:8px 10px;
-      border-bottom:1px solid #eef2f7;
-      vertical-align:middle;
-    }
-    /* Tên món cho phép xuống dòng thoải mái */
-    .sf-col-name {
-      white-space: normal;
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
-    /* Các ô tiền KHÔNG cho phép xuống dòng (giữ số và 'đ' liền nhau) */
-    .sf-money { white-space: nowrap; }
-    .sf-text-right { text-align:right; }
-    .sf-btn-del { background:#fff; color:#dc2626; border:1px solid #fecaca; padding:6px 10px; border-radius:8px; cursor:pointer; user-select:none; }
-  </style>
-`;
+        <style>
+          .sf-detail-table { width:100%; border-collapse:collapse; table-layout:auto; }
+          .sf-detail-table th, .sf-detail-table td { padding:8px 10px; border-bottom:1px solid #eef2f7; vertical-align:middle; }
+          .sf-col-name { white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+          .sf-money { white-space: nowrap; }
+          .sf-text-right { text-align:right; }
+          .sf-btn-del { background:#fff; color:#dc2626; border:1px solid #fecaca; padding:6px 10px; border-radius:8px; cursor:pointer; user-select:none; }
+        </style>
+      `;
 
       // Hàng món (đã bỏ dòng “PTTT hiện tại”)
       const rows = (o.items || [])
@@ -579,7 +669,7 @@
         });
       }
 
-      // Nhận kết quả từ payment.php
+      // Nhận kết quả từ payment.php (bản trong modal) — giữ nguyên như hiện tại
       window.addEventListener("message", async (ev) => {
         const d = ev && ev.data;
         if (!d || typeof d !== "object") return;

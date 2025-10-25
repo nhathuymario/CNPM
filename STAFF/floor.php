@@ -16,13 +16,21 @@ ob_start();
     ORDER_API: '../functions/staff_order_api.php',
     // File thanh toán nằm trong thư mục STAFF
     PAYMENT_URL: 'payment.php',
-    CALL_API: '../functions/call_staff_api.php',  // thêm dòng này
+    CALL_API: '../functions/call_staff_api.php',
     SOUNDS: {
-      order: '../assets/audio/order.mp3', // đổi path nếu cần
+      order: '../assets/audio/order.mp3',
       help:  '../assets/audio/help.mp3'
     }
   };
 </script>
+
+<style>
+  /* Thêm màu cho 2 chú thích mới, tái dùng style .dot sẵn có */
+  .dot-green { background:#16a34a !important; border-color:#16a34a !important; }
+  .dot-orange{ background:#f59e0b !important; border-color:#f59e0b !important; }
+  .legend { display:flex; gap:14px; align-items:center; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; color:#2a3b59; }
+</style>
 
 <div class="floor-page">
   <div class="topbar">
@@ -32,10 +40,13 @@ ob_start();
       <span class="floor-name" id="crumb-floor">Tầng: Tất cả</span>
       <span class="summary" id="crumb-summary">Trống 0/0 bàn - 0 ghế</span>
     </div>
+
+    <!-- Legend: thêm 2 chú thích (xanh lá = gọi thêm món, cam = cần trợ giúp), và bỏ nút refresh -->
     <div class="legend">
       <span><i class="dot dot-blue"></i> Bàn trống</span>
       <span><i class="dot dot-grey"></i> Bàn đang phục vụ</span>
-      <button id="btn-refresh" class="sf-refresh" style="border:1px solid #d0d7de;background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer">↻</button>
+      <span><i class="dot dot-green"></i> Khách gọi thêm món</span>
+      <span><i class="dot dot-orange"></i> Khách cần trợ giúp</span>
     </div>
   </div>
 
