@@ -1,7 +1,7 @@
 <?php
 // GET ?action=detail&order_id=...
 // GET ?action=latest
-// POST ?action=mark_paid  body/query: { order_id, method? ('cash'|'bank') }
+// POST ?action=mark_paid  body/query: { order_id, method? ('cash'|'bank_transfer') }
 // POST ?action=delete_item body: { order_id, order_item_id?, admin_username, admin_password, delete_qty?, reason?, dish_id?, quantity?, price?, name? }
 // Luôn trả JSON.
 header('Content-Type: application/json; charset=utf-8');
@@ -170,7 +170,16 @@ if ($method==='POST' && $action==='mark_paid'){
   if (!$order_id && isset($_GET['order_id']))  $order_id = (int)$_GET['order_id'];
   if (!$paidMethod && isset($_POST['method'])) $paidMethod = strtolower(trim($_POST['method']));
   if (!$paidMethod && isset($_GET['method']))  $paidMethod = strtolower(trim($_GET['method']));
-  if ($paidMethod && !in_array($paidMethod, ['cash','bank'], true)) $paidMethod = null;
+
+  // Normalize accepted method names:
+  // accept both "bank" (legacy/front-end) and "bank_transfer" (DB enum), map "bank" -> "bank_transfer"
+  if ($paidMethod !== null) {
+    $pm = strtolower(trim($paidMethod));
+    if ($pm === 'bank') $pm = 'bank_transfer';
+    $paidMethod = $pm;
+  }
+  // Only allow canonical values
+  if ($paidMethod && !in_array($paidMethod, ['cash','bank_transfer'], true)) $paidMethod = null;
 
   if ($order_id<=0){ http_response_code(400); echo json_encode(['success'=>false,'message'=>'order_id is required']); exit; }
 

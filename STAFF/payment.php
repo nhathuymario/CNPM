@@ -129,6 +129,7 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
 
       if (btnConfirm) {
         btnConfirm.addEventListener('click', async () => {
+          // disable immediately to avoid double clicks
           btnConfirm.disabled = true;
           try {
             // Gửi cả body và query để fallback chắc chắn
@@ -147,12 +148,60 @@ $baseUrl = rtrim($baseUrl, '/') . '/';
             btnConfirm.textContent = 'Đã thanh toán';
             console.log('applied_payment_method:', data.applied_payment_method);
 
+            // Notify opener only once per order.
+            // If same-origin, we use a small shared object on opener to track handled orders.
             let notified = false;
-            try { if (window.opener && !window.opener.closed) { window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; } } catch (e) {}
+            try {
+              if (window.opener && !window.opener.closed) {
+                try {
+                  // If opener doesn't have tracking object, create it
+                  if (!window.opener.__sf_handled_payments) {
+                    try { window.opener.__sf_handled_payments = {}; } catch(e) { /* ignore cross-origin write errors */ }
+                  }
+                  // If tracking object exists and this order not marked, mark & postMessage
+                  if (window.opener.__sf_handled_payments && !window.opener.__sf_handled_payments[ORDER_ID]) {
+                    try {
+                      window.opener.__sf_handled_payments[ORDER_ID] = true;
+                    } catch(e) {
+                      // ignore if cannot write to opener
+                    }
+                    window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*');
+                    notified = true;
+                  } else {
+                    // If tracking object not writable or already set, still attempt postMessage,
+                    // but avoid double-sending from this window
+                    // To be safe, only postMessage if not previously sent by this window
+                    if (!window.__sf_sent_payment_for || window.__sf_sent_payment_for !== ORDER_ID) {
+                      window.postMessage({ type: 'staff-payment-success-local', order_id: ORDER_ID }, '*'); // local-only fallback
+                      // set a local flag so this window won't send again
+                      window.__sf_sent_payment_for = ORDER_ID;
+                      // try to also notify opener (best-effort)
+                      try { if (window.opener && !window.opener.closed) window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; } catch(e){}
+                    } else {
+                      console.debug('This window already sent local payment message for order', ORDER_ID);
+                    }
+                  }
+                } catch(e) {
+                  // some browsers may prevent writing to opener object if cross-origin;
+                  // fallback to simple postMessage only once per this window
+                  if (!window.__sf_sent_payment_for || window.__sf_sent_payment_for !== ORDER_ID) {
+                    try { window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; window.__sf_sent_payment_for = ORDER_ID; }
+                    catch(er){ console.warn('Cannot postMessage to opener:', er); }
+                  } else {
+                    console.debug('This window already posted message for order', ORDER_ID);
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('Notify opener failed', e);
+            }
+
+            // Close or redirect back to floor
             if (notified) { window.close(); setTimeout(()=>{ location.href = BASE_URL + 'STAFF/floor.php'; }, 500); }
             else { location.href = BASE_URL + 'STAFF/floor.php'; }
           } catch (e) {
             alert(e.message || 'Có lỗi xảy ra.');
+            // Re-enable so staff có thể thử lại
             btnConfirm.disabled = false;
           }
         });

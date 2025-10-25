@@ -1,116 +1,332 @@
-:root{
-  --brand:#0b72cf;
-  --bg:#f5f7fb;
-  --card:#fff;
-  --muted:#7a8599;
-  --line:#e6e8ee;
-  --blue:#1376d9;   /* trống */
-  --grey:#9aa3b2;   /* đang phục vụ */
-  --orange:#ff9a3e; /* đặt trước (không dùng mặc định) */
+:root {
+  --brand: #0b72cf;
+  --bg: #f5f7fb;
+  --card: #fff;
+  --muted: #7a8599;
+  --line: #e6e8ee;
+  --blue: #1376d9; /* trống */
+  --grey: #9aa3b2; /* đang phục vụ */
+  --orange: #ff9a3e; /* đặt trước (không dùng mặc định) */
 }
-body{background:var(--bg);}
-.floor-page{max-width:1200px;margin:16px auto}
-.topbar{
-  display:flex;justify-content:space-between;align-items:center;
-  background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px
+body {
+  background: var(--bg);
 }
-.crumbs{display:flex;gap:10px;align-items:center;color:#2a3b59;flex-wrap:wrap}
-.crumbs .scope{font-weight:700}
-.crumbs .floor-name{font-weight:700}
-.crumbs .summary{color:#445166}
-.crumbs .sep{color:#9aa3b2}
-.legend{display:flex;gap:16px;align-items:center;color:#445166}
-.dot{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;border:1px solid #d0d7de}
-.dot-blue{background:rgba(19,118,217,.15);border-color:var(--blue)}
-.dot-grey{background:rgba(154,163,178,.2);border-color:var(--grey)}
-.dot-orange{background:rgba(255,154,62,.2);border-color:var(--orange)}
+.floor-page {
+  max-width: 1200px;
+  margin: 16px auto;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.crumbs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #2a3b59;
+  flex-wrap: wrap;
+}
+.crumbs .scope {
+  font-weight: 700;
+}
+.crumbs .floor-name {
+  font-weight: 700;
+}
+.crumbs .summary {
+  color: #445166;
+}
+.crumbs .sep {
+  color: #9aa3b2;
+}
+.legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  color: #445166;
+}
+.dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  margin-right: 6px;
+  border: 1px solid #d0d7de;
+}
+.dot-blue {
+  background: rgba(19, 118, 217, 0.15);
+  border-color: var(--blue);
+}
+.dot-grey {
+  background: rgba(154, 163, 178, 0.2);
+  border-color: var(--grey);
+}
+.dot-orange {
+  background: rgba(255, 154, 62, 0.2);
+  border-color: var(--orange);
+}
 
-.layout{display:grid;grid-template-columns:220px 1fr;gap:12px}
-.sidebar{
-  background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 12px;
 }
-.floor-item{
-  display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;border:1px solid var(--line);
-  color:#2a3b59;text-decoration:none;background:#fff
+.sidebar {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.floor-item.active{background:#f0f6ff;border-color:#cfe0ff;color:#0b72cf}
-.floor-item .icon{
-  width:14px;height:14px;background:#2b7cd8;border-radius:3px
+.floor-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: #2a3b59;
+  text-decoration: none;
+  background: #fff;
 }
-.floor-item .count{margin-left:auto;color:var(--muted);font-size:12px}
+.floor-item.active {
+  background: #f0f6ff;
+  border-color: #cfe0ff;
+  color: #0b72cf;
+}
+.floor-item .icon {
+  width: 14px;
+  height: 14px;
+  background: #2b7cd8;
+  border-radius: 3px;
+}
+.floor-item .count {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
 
-.canvas{
-  background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;min-height:540px
+.canvas {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  min-height: 540px;
 }
-.tables-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:26px;justify-items:center
+.tables-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+  justify-items: center;
 }
-.table-card{
-  width:240px;height:184px;border-radius:12px;border:2px solid var(--line);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;
-  transition:transform .12s ease, box-shadow .12s ease, border-color .2s ease
+.table-card {
+  width: 240px;
+  height: 184px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    border-color 0.2s ease;
 }
-.table-card:hover{ transform: translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.08) }
-.table-card.available{border-color:var(--blue);color:var(--blue)}
-.table-card.serving{border-color:var(--grey);color:var(--grey)}
-.table-card.reserved{border-color:var(--orange);color:var(--orange)}
-.table-icon{position:relative;display:flex;align-items:center;justify-content:center;gap:18px;font-size:36px}
-.table-icon .center{font-size:28px}
-.table-meta{display:flex;gap:10px;color:#2a3b59}
-.table-card.available .table-meta{color:#225f9c}
-.table-card.serving .table-meta{color:#5b6574}
-.table-card.reserved .table-meta{color:#b36a21}
+.table-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.table-card.available {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.table-card.serving {
+  border-color: var(--grey);
+  color: var(--grey);
+}
+.table-card.reserved {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.table-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  font-size: 36px;
+}
+.table-icon .center {
+  font-size: 28px;
+}
+.table-meta {
+  display: flex;
+  gap: 10px;
+  color: #2a3b59;
+}
+.table-card.available .table-meta {
+  color: #225f9c;
+}
+.table-card.serving .table-meta {
+  color: #5b6574;
+}
+.table-card.reserved .table-meta {
+  color: #b36a21;
+}
 
-.empty{color:var(--muted);padding:20px;text-align:center}
+.empty {
+  color: var(--muted);
+  padding: 20px;
+  text-align: center;
+}
 
 /* Bảng chi tiết (modal) bổ sung nhẹ cho light theme */
-.detail-table{ width:100%; border-collapse:collapse; }
-.detail-table th, .detail-table td{ border-bottom:1px solid var(--line); padding:8px; font-size:13px; }
-.detail-table th{ text-align:left; color:#5a6b84; }
-.t-right{ text-align:right; }
-.btn{
-  padding:8px 12px; border-radius:8px; border:1px solid #d0d7de; background:#fff; color:#2a3b59; cursor:pointer;
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
 }
-.btn-primary{
-  background:var(--brand); color:#fff; border-color:#0a66c2;
+.detail-table th,
+.detail-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px;
+  font-size: 13px;
+}
+.detail-table th {
+  text-align: left;
+  color: #5a6b84;
+}
+.t-right {
+  text-align: right;
+}
+.btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #2a3b59;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  border-color: #0a66c2;
 }
 
 /* ==== Call-Staff styles (bổ sung) ==== */
 /* Tô viền và nhấn mạnh thẻ bàn đang có cuộc gọi */
-.table-card.has-call{
+.table-card.has-call {
   border-color: var(--orange);
-  box-shadow: 0 0 0 2px rgba(255,154,62,.25) inset;
+  box-shadow: 0 0 0 2px rgba(255, 154, 62, 0.25) inset;
 }
 /* Đổi màu icon khi có cuộc gọi */
-.table-card.has-call .table-icon{
+.table-card.has-call .table-icon {
   color: var(--orange);
 }
 /* Huy hiệu hiển thị “Gọi nhân viên • Xp” */
-.call-badge{
+.call-badge {
   display: inline-block;
   margin-top: 4px;
   font-size: 12px;
-  background: rgba(255,154,62,.15);
-  border: 1px solid rgba(255,154,62,.4);
+  background: rgba(255, 154, 62, 0.15);
+  border: 1px solid rgba(255, 154, 62, 0.4);
   color: #b36a21;
   padding: 2px 8px;
   border-radius: 999px;
 }
 /* Call-Staff highlight */
-.table-card.has-call{ border-color: var(--orange); box-shadow: 0 0 0 2px rgba(255,154,62,.25) inset; }
-.table-card.has-call .table-icon{ color: var(--orange); }
-.call-badge{
-  display:inline-block;margin-top:4px;font-size:12px;
-  background:rgba(255,154,62,.15); border:1px solid rgba(255,154,62,.4);
-  color:#b36a21; padding:2px 8px; border-radius:999px;
+.table-card.has-call {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(255, 154, 62, 0.25) inset;
+}
+.table-card.has-call .table-icon {
+  color: var(--orange);
+}
+.call-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  background: rgba(255, 154, 62, 0.15);
+  border: 1px solid rgba(255, 154, 62, 0.4);
+  color: #b36a21;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 
 /* Responsive */
-@media (max-width: 992px){
-  .layout{grid-template-columns:1fr}
-  .tables-grid{grid-template-columns:repeat(3,1fr)}
+@media (max-width: 992px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .tables-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
-@media (max-width: 680px){
-  .tables-grid{grid-template-columns:repeat(2,1fr)}
-  .table-card{width:100%}
+@media (max-width: 680px) {
+  .tables-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .table-card {
+    width: 100%;
+  }
+}
+
+/* Thêm vào CSS chung hoặc chèn vào <head> của floor.php */
+#detail-card {
+  box-sizing: border-box;
+  /* cho phép chiều rộng co giãn, không ép cứng */
+  max-width: calc(100% - 32px);
+  width: auto;
+  margin: 10px;
+}
+
+/* #detail-body: chỉ cuộn theo chiều dọc, KHÔNG cuộn ngang */
+#detail-body {
+  max-height: calc(
+    100vh - 160px
+  ); /* cho phép modal co giãn, nếu quá cao sẽ cuộn dọc */
+  overflow-y: auto;
+  overflow-x: hidden; /* ẩn thanh kéo ngang */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Bảng chi tiết: cho phép nội dung xuống dòng, không ép fixed layout */
+.sf-detail-table {
+  width: 100%;
+  table-layout: auto; /* từ fixed -> auto để các cột co giãn theo nội dung */
+  border-collapse: collapse;
+}
+
+/* Cho phép các ô xuống dòng, bọc từ, tránh overflow ngang */
+.sf-detail-table th,
+.sf-detail-table td {
+  white-space: normal; /* cho phép xuống dòng */
+  word-break: break-word; /* cắt dài bất thường */
+  overflow-wrap: anywhere; /* phá từ dài để không tràn */
+  vertical-align: middle;
+  padding: 8px 10px;
+}
+
+/* Tên món: ưu tiên xuống dòng thay vì cắt */
+.sf-col-name {
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+}
+
+/* Giữ canh phải cho cột số/tiền như cũ */
+.sf-text-right {
+  text-align: right;
+}
+
+/* Nếu cần, ẩn thanh cuộn ngang của thẻ wrapper ngoài cùng */
+#detail-backdrop {
+  overflow-x: hidden;
 }
