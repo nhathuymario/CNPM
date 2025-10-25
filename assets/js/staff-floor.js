@@ -3,221 +3,156 @@
     const grid = document.getElementById('tables-grid');
     if (!grid) return;
 
-    const LIST_API = (window.SF_CONFIG && window.SF_CONFIG.LIST_API) || '../functions/staff_tables_api.php?action=list';
-    const ORDER_API = (window.SF_CONFIG && window.SF_CONFIG.ORDER_API) || '../functions/staff_order_api.php';
-    const CALL_API  = (window.SF_CONFIG && window.SF_CONFIG.CALL_API)  || '../functions/call_staff_api.php';
+    const LIST_API    = (window.SF_CONFIG && window.SF_CONFIG.LIST_API)    || '../functions/staff_tables_api.php?action=list';
+    const ORDER_API   = (window.SF_CONFIG && window.SF_CONFIG.ORDER_API)   || '../functions/staff_order_api.php';
+    const CALL_API    = (window.SF_CONFIG && window.SF_CONFIG.CALL_API)    || '../functions/call_staff_api.php';
     const PAYMENT_URL = (window.SF_CONFIG && window.SF_CONFIG.PAYMENT_URL) || 'payment.php';
 
     const floorListWrap = document.getElementById('floor-list');
-    const countAll = document.getElementById('count-all');
-    const crumbScope = document.getElementById('crumb-scope');
-    const crumbFloor = document.getElementById('crumb-floor');
-    const crumbSummary = document.getElementById('crumb-summary');
-    const btnRefresh = document.getElementById('btn-refresh');
+    const countAll      = document.getElementById('count-all');
+    const crumbScope    = document.getElementById('crumb-scope');
+    const crumbFloor    = document.getElementById('crumb-floor');
+    const crumbSummary  = document.getElementById('crumb-summary');
+    const btnRefresh    = document.getElementById('btn-refresh');
 
     let lastData = null;
     let selectedFloor = 'all';
     let selectedTableNumber = null;
     let timer = null;
 
-// ==== Audio + Event detection (MP3 files) ====
-let firstBootSeeded = false;
-const seenOrderIds = new Set();
-const seenCallOpenIds = new Set();
+    async function jsonOrText(resp) {
+      const ct = (resp.headers.get('content-type') || '').toLowerCase();
+      if (ct.includes('application/json')) return resp.json();
+      const txt = await resp.text();
+      throw new Error(txt || `HTTP ${resp.status}`);
+    }
 
-// Đường dẫn mp3: lấy từ SF_CONFIG nếu có, fallback mặc định
-const SOUNDS = (window.SF_CONFIG && window.SF_CONFIG.SOUNDS) || {
-  order: '../assets/audio/order.mp3',
-  help: '../assets/audio/help.mp3'
-};
+    // ====== Audio (rút gọn) ======
+    const SOUNDS = (window.SF_CONFIG && window.SF_CONFIG.SOUNDS) || { order:'../assets/audio/order.mp3', help:'../assets/audio/help.mp3' };
+    const audioPlayers = { order:new Audio(SOUNDS.order), help:new Audio(SOUNDS.help) };
+    Object.values(audioPlayers).forEach(a=>{ if(a){ a.preload='auto'; a.crossOrigin='anonymous'; a.volume=0.7; }});
+    function unlockAudioOnce(){ ['order','help'].forEach(k=>{ const a=audioPlayers[k]; if(!a) return; try{ a.muted=true; const p=a.play(); if(p&&typeof p.then==='function'){ p.then(()=>{a.pause();a.currentTime=0;a.muted=false;}).catch(()=>{a.pause();a.currentTime=0;a.muted=false;}); } else { a.pause(); a.currentTime=0; a.muted=false; } }catch{} }); window.removeEventListener('pointerdown',unlockAudioOnce); window.removeEventListener('keydown',unlockAudioOnce); }
+    window.addEventListener('pointerdown',unlockAudioOnce,{once:true});
+    window.addEventListener('keydown',unlockAudioOnce,{once:true});
+    let firstBootSeeded=false; const seenOrderIds=new Set(); const seenCallOpenIds=new Set();
+    function playOrderSound(){ const a=audioPlayers.order; if(a){ try{ a.currentTime=0; a.play().catch(()=>{});}catch{}} }
+    function playHelpSound(){  const a=audioPlayers.help;  if(a){ try{ a.currentTime=0; a.play().catch(()=>{});}catch{}} }
+    function detectEvents(newData){
+      const tables = Array.isArray(newData?.tables) ? newData.tables : [];
+      const currOrderIds=[], currCallOpenIds=[];
+      for(const t of tables){ if(t?.current_order?.id) currOrderIds.push(Number(t.current_order.id)); if(t?.has_call&&t?.call&&t.call.status==='open'&&t.call.id) currCallOpenIds.push(Number(t.call.id)); }
+      if(!firstBootSeeded){ currOrderIds.forEach(id=>seenOrderIds.add(id)); currCallOpenIds.forEach(id=>seenCallOpenIds.add(id)); firstBootSeeded=true; return; }
+      if(currOrderIds.some(id=>!seenOrderIds.has(id))) playOrderSound();
+      if(currCallOpenIds.some(id=>!seenCallOpenIds.has(id))) playHelpSound();
+      currOrderIds.forEach(id=>seenOrderIds.add(id)); currCallOpenIds.forEach(id=>seenCallOpenIds.add(id));
+    }
 
-// Tạo audio players
-const audioPlayers = {
-  order: new Audio(SOUNDS.order),
-  help: new Audio(SOUNDS.help)
-};
-// Thiết lập chung
-Object.values(audioPlayers).forEach(a => {
-  if (!a) return;
-  a.preload = 'auto';
-  a.crossOrigin = 'anonymous';
-  a.volume = 0.7; // chỉnh âm lượng tại đây (0.0 - 1.0)
-});
-
-// Mở khóa audio sau lần tương tác đầu (chính sách trình duyệt)
-function unlockAudioOnce() {
-  ['order','help'].forEach(k => {
-    const a = audioPlayers[k];
-    if (!a) return;
-    try {
-      a.muted = true;
-      const p = a.play();
-      if (p && typeof p.then === 'function') {
-        p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {
-          a.pause(); a.currentTime = 0; a.muted = false;
-        });
-      } else {
-        a.pause(); a.currentTime = 0; a.muted = false;
+    // Nhận kết quả từ payment.php
+    window.addEventListener('message', async (ev) => {
+      const d = ev && ev.data;
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'staff-payment-success') {
+        if (d.order_id) {
+          try {
+            const url  = `${ORDER_API}?action=mark_paid&order_id=${encodeURIComponent(d.order_id)}&method=bank`;
+            const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ order_id:d.order_id, method:'bank' }) });
+            try { await jsonOrText(resp); } catch {}
+          } catch {}
+          try {
+            if (lastData && Array.isArray(lastData.tables)) {
+              const t = lastData.tables.find(x => x.current_order && Number(x.current_order.id) === Number(d.order_id));
+              if (t?.current_order) t.current_order.payment_method = 'bank';
+            }
+          } catch {}
+        }
+        await refresh();
+        const bd = document.getElementById('detail-backdrop'); if (bd) bd.style.display='none';
+        alert('Đã xác nhận thanh toán (chuyển khoản).');
       }
-    } catch (e) { /* ignore */ }
-  });
-  window.removeEventListener('pointerdown', unlockAudioOnce);
-  window.removeEventListener('keydown', unlockAudioOnce);
-}
-window.addEventListener('pointerdown', unlockAudioOnce, { once: true });
-window.addEventListener('keydown', unlockAudioOnce, { once: true });
+    });
 
-// Phát âm
-function playOrderSound() {
-  const a = audioPlayers.order;
-  if (!a) return;
-  try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
-}
-function playHelpSound() {
-  const a = audioPlayers.help;
-  if (!a) return;
-  try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
-}
+    function iconTable(){ return `<div class="table-icon"><span>🍽️</span><span class="center">╬</span><span>🪑</span></div>`; }
+    function fmtMoney(v){ try{ return new Intl.NumberFormat('vi-VN').format(v)+'đ'; } catch { return v+'đ'; } }
+    function fmtTimeShort(s){ if(!s) return ''; const d=new Date((s||'').replace(' ','T')); return isNaN(d)?s:d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
 
-// So khớp dữ liệu để phát hiện “đơn mới” và “trợ giúp mới”
-function detectEvents(newData) {
-  const tables = Array.isArray(newData?.tables) ? newData.tables : [];
+    function setSummaryAll(sum){ crumbSummary.textContent=`Trống ${sum.free_tables}/${sum.total_tables} bàn - ${sum.total_seats} ghế`; }
+    function setSummaryFloor(floorAgg){ if(!floorAgg){ crumbFloor.textContent='Tầng: Tất cả'; return; } crumbFloor.textContent=`Tầng: ${floorAgg.floor}`; crumbSummary.textContent=`Trống ${floorAgg.free_tables}/${floorAgg.total_tables} bàn - ${floorAgg.total_seats} ghế`; }
 
-  const currentOrderIds = [];
-  const currentCallOpenIds = [];
-
-  for (const t of tables) {
-    if (t?.current_order?.id) currentOrderIds.push(Number(t.current_order.id));
-    if (t?.has_call && t?.call && t.call.status === 'open' && t.call.id) {
-      currentCallOpenIds.push(Number(t.call.id));
-    }
-  }
-
-  // Lần đầu seed để không phát âm ồ ạt
-  if (!firstBootSeeded) {
-    currentOrderIds.forEach(id => seenOrderIds.add(id));
-    currentCallOpenIds.forEach(id => seenCallOpenIds.add(id));
-    firstBootSeeded = true;
-    return;
-  }
-
-  // Tìm order mới và call OPEN mới
-  const newOrders = currentOrderIds.filter(id => !seenOrderIds.has(id));
-  const newCalls  = currentCallOpenIds.filter(id => !seenCallOpenIds.has(id));
-
-  if (newOrders.length > 0) playOrderSound();
-  if (newCalls.length > 0)  playHelpSound();
-
-  // Cập nhật bộ nhớ
-  currentOrderIds.forEach(id => seenOrderIds.add(id));
-  currentCallOpenIds.forEach(id => seenCallOpenIds.add(id));
-}
-
-    function iconTable() {
-      return `
-        <div class="table-icon">
-          <span>🍽️</span>
-          <span class="center">╬</span>
-          <span>🪑</span>
-        </div>
-      `;
-    }
-    function fmtMoney(v) { try { return new Intl.NumberFormat('vi-VN').format(v) + 'đ'; } catch { return v + 'đ'; } }
-    function fmtTimeShort(s) {
-      if (!s) return '';
-      const str = s.replace(' ', 'T');
-      const d = new Date(str);
-      if (isNaN(d.getTime())) return s;
-      return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function setSummaryAll(sum) {
-      crumbSummary.textContent = `Trống ${sum.free_tables}/${sum.total_tables} bàn - ${sum.total_seats} ghế`;
-    }
-    function setSummaryFloor(floorAgg) {
-      if (!floorAgg) { crumbFloor.textContent = 'Tầng: Tất cả'; return; }
-      crumbFloor.textContent = `Tầng: ${floorAgg.floor}`;
-      crumbSummary.textContent = `Trống ${floorAgg.free_tables}/${floorAgg.total_tables} bàn - ${floorAgg.total_seats} ghế`;
-    }
-
-    function renderFloors(floors) {
-      countAll.textContent = `(${(lastData?.summary?.free_tables) || 0})`;
-      floorListWrap.innerHTML = '';
-      floors.forEach(f => {
-        const a = document.createElement('a');
-        a.href = 'javascript:void(0)';
-        a.className = 'floor-item' + (String(selectedFloor) === String(f.floor) ? ' active' : '');
-        a.dataset.floor = String(f.floor);
-        a.innerHTML = `
-          <span class="icon"></span>
-          <span>Tầng ${f.floor}</span>
-          <span class="count">(${f.free_tables})</span>
-        `;
-        a.onclick = () => { selectedFloor = String(f.floor); selectedTableNumber = null; render(); };
+    function renderFloors(floors){
+      countAll.textContent=`(${(lastData?.summary?.free_tables)||0})`;
+      floorListWrap.innerHTML='';
+      floors.forEach(f=>{
+        const a=document.createElement('a'); a.href='javascript:void(0)';
+        a.className='floor-item'+(String(selectedFloor)===String(f.floor)?' active':'');
+        a.dataset.floor=String(f.floor);
+        a.innerHTML=`<span class="icon"></span><span>Tầng ${f.floor}</span><span class="count">(${f.free_tables})</span>`;
+        a.onclick=()=>{ selectedFloor=String(f.floor); selectedTableNumber=null; render(); };
         floorListWrap.appendChild(a);
       });
-
-      const allBtn = document.getElementById('floor-all');
-      if (allBtn) {
-        if (selectedFloor === 'all') allBtn.classList.add('active'); else allBtn.classList.remove('active');
-        allBtn.onclick = () => { selectedFloor = 'all'; selectedTableNumber = null; render(); };
-      }
+      const allBtn=document.getElementById('floor-all');
+      if(allBtn){ if(selectedFloor==='all') allBtn.classList.add('active'); else allBtn.classList.remove('active'); allBtn.onclick=()=>{ selectedFloor='all'; selectedTableNumber=null; render(); }; }
     }
 
-    function renderGrid() {
-      const allTables = lastData?.tables || [];
-      const tables = allTables.filter(t => selectedFloor === 'all' || String(t.floor) === String(selectedFloor));
-      grid.innerHTML = '';
-
-      if (!tables.length) {
-        const div = document.createElement('div');
-        div.className = 'empty';
-        div.textContent = 'Không có bàn ở tầng đã chọn.';
-        grid.appendChild(div);
-        return;
-      }
-
-      tables.forEach(t => {
-        const statusClass = t.is_busy ? 'serving' : 'available';
-        const hasCall = !!t.has_call;
-        const card = document.createElement('div');
-        card.className = `table-card ${statusClass}` + (hasCall ? ' has-call' : '');
-        const callLine = hasCall
-          ? `<div class="call-badge">${t.call.status === 'open' ? 'Gọi nhân viên' : 'Đang tiếp nhận'} • ${t.call.call_wait_mins}p</div>`
-          : '';
-        const orderInfo = t.current_order
-          ? `<div style="color:#5b6574;font-size:13px">
-               Đặt lúc ${fmtTimeShort(t.current_order.ordered_at)} • Chờ ${t.current_order.wait_mins}p
-             </div>
-             <div style="color:#5b6574;font-size:13px">Tổng cần thu: ${fmtMoney(t.current_order.total)}</div>`
-          : '';
-
-        card.innerHTML = `
-          ${iconTable()}
-          <div class="table-meta">
-            <span><strong>Bàn ${t.table_number}</strong></span>
-            <span>•</span>
-            <span>Tầng ${t.floor}</span>
-          </div>
-          ${callLine}
-          ${orderInfo}
-        `;
-        card.onclick = () => openDetail(t);
+    function renderGrid(){
+      const allTables=lastData?.tables||[];
+      const tables=allTables.filter(t=>selectedFloor==='all'||String(t.floor)===String(selectedFloor));
+      grid.innerHTML='';
+      if(!tables.length){ const div=document.createElement('div'); div.className='empty'; div.textContent='Không có bàn ở tầng đã chọn.'; grid.appendChild(div); return; }
+      tables.forEach(t=>{
+        const statusClass=t.is_busy?'serving':'available';
+        const hasCall=!!t.has_call;
+        const card=document.createElement('div');
+        card.className=`table-card ${statusClass}`+(hasCall?' has-call':'');
+        const callLine=hasCall?`<div class="call-badge">${t.call.status==='open'?'Gọi nhân viên':'Đang tiếp nhận'} • ${t.call.call_wait_mins}p</div>`:'';
+        const orderInfo=t.current_order?`
+          <div style="color:#5b6574;font-size:13px">Đặt lúc ${fmtTimeShort(t.current_order.ordered_at)} • Chờ ${t.current_order.wait_mins}p</div>
+          <div style="color:#5b6574;font-size:13px">Tổng cần thu: ${fmtMoney(t.current_order.total)}</div>`:'';
+        card.innerHTML=`${iconTable()}
+          <div class="table-meta"><span><strong>Bàn ${t.table_number}</strong></span><span>•</span><span>Tầng ${t.floor}</span></div>
+          ${callLine}${orderInfo}`;
+        card.onclick=()=>openDetail(t);
         grid.appendChild(card);
       });
     }
 
+    // Mini modal: xác thực Admin + lý do
+    function promptAdmin(reasonDefault=''){
+      return new Promise(resolve=>{
+        const wrap=document.createElement('div');
+        wrap.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+        wrap.innerHTML=`
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;width:360px;max-width:92%">
+            <h3 style="margin:0 0 8px 0;color:#111827;font-size:16px">Xác nhận quyền Admin</h3>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input id="adm-user" placeholder="Tài khoản Admin" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+              <input id="adm-pass" type="password" placeholder="Mật khẩu" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+              <input id="adm-reason" placeholder="Lý do xóa (tuỳ chọn)" style="padding:8px;border:1px solid #d1d5db;border-radius:8px" value="${reasonDefault?String(reasonDefault).replace(/"/g,'&quot;'):''}">
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+              <button id="adm-cancel" class="btn">Hủy</button>
+              <button id="adm-ok" class="btn btn-primary">Xác nhận</button>
+            </div>
+          </div>`;
+        document.body.appendChild(wrap);
+        const $ = s=>wrap.querySelector(s);
+        $('#adm-user').focus();
+        function done(v){ document.body.removeChild(wrap); resolve(v); }
+        $('#adm-cancel').onclick=()=>done(null);
+        $('#adm-ok').onclick=()=>{ const u=$('#adm-user').value.trim(), p=$('#adm-pass').value, r=$('#adm-reason').value.trim(); if(!u||p===''){ alert('Vui lòng nhập tài khoản và mật khẩu Admin'); return;} done({username:u,password:p,reason:r}); };
+        wrap.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); done(null);} if(e.key==='Enter'){ $('#adm-ok').click(); }});
+      });
+    }
+
     // Modal detail
-    const backdrop = document.getElementById('detail-backdrop');
-    const bodyEl = document.getElementById('detail-body');
+    const backdrop  = document.getElementById('detail-backdrop');
+    const bodyEl    = document.getElementById('detail-body');
     const actionsEl = document.getElementById('detail-actions');
-    const btnClose = document.getElementById('btn-detail-close');
+    const btnClose  = document.getElementById('btn-detail-close');
 
     function openDetail(table) {
       selectedTableNumber = table.table_number;
       backdrop.style.display = 'flex';
 
-      // Header call info (nếu có)
       const callInfo = table.has_call
         ? `<div style="margin-bottom:8px;padding:8px 10px;background:#fff7ed;border:1px solid #ffedd5;border-radius:8px;color:#92400e">
              <strong>${table.call.status === 'open' ? 'Gọi nhân viên' : 'Đang tiếp nhận'}</strong>
@@ -227,91 +162,172 @@ function detectEvents(newData) {
         : '';
 
       if (!table.current_order) {
-        bodyEl.innerHTML = `
-          ${callInfo}
+        bodyEl.innerHTML = `${callInfo}
           <div>Bàn <strong>${table.table_number}</strong> • Tầng <strong>${table.floor}</strong></div>
-          <div style="margin-top:8px;color:#5b6574">Chưa có đơn chưa thanh toán cho bàn này.</div>
-        `;
-        // Hành động cho call (nếu có) ngay cả khi không có order
+          <div style="margin-top:8px;color:#5b6574">Chưa có đơn chưa thanh toán cho bàn này.</div>`;
         const callBtns = table.has_call
           ? `<button class="btn" id="btn-call-ack">Tiếp nhận</button>
-             <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>`
-          : '';
+             <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>` : '';
         actionsEl.innerHTML = callBtns;
         wireCallButtons(table);
         return;
       }
 
       const o = table.current_order;
+
+      // Styles + colgroup để canh đều cột
+      const tableStyles = `
+        <style>
+          .sf-detail-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+          .sf-detail-table th, .sf-detail-table td { padding:8px 10px; border-bottom:1px solid #eef2f7; vertical-align:middle; }
+          .sf-text-right { text-align:right; }
+          .sf-col-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          .sf-btn-del { background:#fff; color:#dc2626; border:1px solid #fecaca; padding:6px 10px; border-radius:8px; cursor:pointer; user-select:none; }
+        </style>
+      `;
+
+      // Hàng món (đã bỏ dòng “PTTT hiện tại” theo yêu cầu)
       const rows = (o.items || []).map(i => `
-        <tr>
-          <td>${i.name}</td>
-          <td class="t-right">x${i.quantity}</td>
-          <td class="t-right">${fmtMoney(i.price)}</td>
-          <td class="t-right">${fmtMoney(i.price * i.quantity)}</td>
+        <tr data-oi="${i.order_item_id || ''}">
+          <td class="sf-col-name">${i.name}</td>
+          <td class="sf-text-right">x${i.quantity}</td>
+          <td class="sf-text-right">${fmtMoney(i.price)}</td>
+          <td class="sf-text-right">${fmtMoney(i.price * i.quantity)}</td>
+          <td class="sf-text-right">
+            <button type="button"
+                    class="sf-btn-del btn-del-item"
+                    data-oi="${i.order_item_id || ''}"
+                    data-dish="${i.id || ''}"
+                    data-name="${(i.name || '').replace(/"/g,'&quot;')}"
+                    data-qty="${i.quantity}"
+                    data-price="${i.price}">
+              Xóa
+            </button>
+          </td>
         </tr>
       `).join('');
 
       bodyEl.innerHTML = `
+        ${tableStyles}
         ${callInfo}
         <div style="margin-bottom:8px">
           <div>Bàn <strong>${table.table_number}</strong> • Tầng <strong>${table.floor}</strong></div>
           ${o.ordered_at ? `<div style="color:#5b6574">Đặt lúc ${fmtTimeShort(o.ordered_at)} • Đã chờ ${o.wait_mins} phút</div>` : ''}
-          <div style="color:#5b6574">PTTT hiện tại: ${o.payment_method}${o.ref_code ? ` (Mã: ${o.ref_code})` : ''}</div>
           <div style="color:#5b6574">Trạng thái đơn: ${o.status}</div>
         </div>
-        <table class="detail-table">
-          <thead><tr><th>Món</th><th class="t-right">SL</th><th class="t-right">Đơn giá</th><th class="t-right">Thành tiền</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="4">(Không có món)</td></tr>'}</tbody>
+        <table class="sf-detail-table">
+          <colgroup>
+            <col />               <!-- Món -->
+            <col style="width:72px" />   <!-- SL -->
+            <col style="width:110px" />  <!-- Đơn giá -->
+            <col style="width:130px" />  <!-- Thành tiền -->
+            <col style="width:76px" />   <!-- Xóa -->
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Món</th>
+              <th class="sf-text-right">SL</th>
+              <th class="sf-text-right">Đơn giá</th>
+              <th class="sf-text-right">Thành tiền</th>
+              <th class="sf-text-right">Xóa</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="5">(Không có món)</td></tr>'}</tbody>
           <tfoot>
             <tr>
-              <td colspan="3" class="t-right"><strong>Tổng cần thu</strong></td>
-              <td class="t-right"><strong>${fmtMoney(o.total)}</strong></td>
+              <td colspan="4" class="sf-text-right"><strong>Tổng cần thu</strong></td>
+              <td class="sf-text-right"><strong>${fmtMoney(o.total)}</strong></td>
             </tr>
           </tfoot>
         </table>
       `;
 
-      // Hai lựa chọn thanh toán + nút xử lý call
-      const transferUrl = `${PAYMENT_URL}?order_id=${encodeURIComponent(o.id)}`;
+      // Xóa món: chấp nhận cả trường hợp không có order_item_id (đơn cũ)
+      const tbody = bodyEl.querySelector('tbody');
+      if (tbody) {
+        tbody.addEventListener('click', async (e) => {
+          const btn = e.target.closest('.btn-del-item');
+          if (!btn) return;
+          e.stopPropagation();
+
+          const auth = await promptAdmin(`Xóa ${(btn.dataset.name||'')} x${btn.dataset.qty||''}`);
+          if (!auth) return;
+
+          const payload = {
+            order_id: o.id,
+            order_item_id: parseInt(btn.dataset.oi || '0', 10) || 0,
+            admin_username: auth.username,
+            admin_password: auth.password,
+            reason: auth.reason || null,
+            dish_id: btn.dataset.dish ? parseInt(btn.dataset.dish,10) : null,
+            quantity: btn.dataset.qty ? parseInt(btn.dataset.qty,10) : null,
+            price: btn.dataset.price ? parseFloat(btn.dataset.price) : null,
+            name: btn.dataset.name || null
+          };
+
+          btn.disabled = true;
+          try {
+            const resp = await fetch(`${ORDER_API}?action=delete_item`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await jsonOrText(resp);
+            if (!data.success) throw new Error(data.message || 'Xóa không thành công');
+            await refresh();
+            const t = lastData.tables.find(x => String(x.table_number) === String(table.table_number));
+            if (t) openDetail(t);
+            alert('Đã xóa món.');
+          } catch (err) {
+            alert(err.message || 'Có lỗi khi xóa món.');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      }
+
+      // Hành động thanh toán + call
+      const transferUrl = `${PAYMENT_URL}?order_id=${encodeURIComponent(o.id)}&method=bank`;
       const callBtns = table.has_call
         ? `<button class="btn" id="btn-call-ack">Tiếp nhận</button>
-           <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>`
-        : '';
+           <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>` : '';
       actionsEl.innerHTML = `
         <button class="btn btn-primary" id="btn-pay-cash">Thanh toán thành công</button>
-        <a class="btn" id="btn-pay-transfer" href="${transferUrl}" target="_blank" rel="noopener">Thanh toán bằng chuyển khoản</a>
+        <a class="btn" id="btn-pay-transfer" href="${transferUrl}">Thanh toán bằng chuyển khoản</a>
         ${callBtns}
       `;
 
-      // Tiền mặt → mark_paid
       const btnCash = document.getElementById('btn-pay-cash');
       btnCash.onclick = async () => {
         btnCash.disabled = true;
         try {
-          const resp = await fetch(`${ORDER_API}?action=mark_paid`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ order_id: o.id })
-          });
-          const data = await resp.json();
+          const url  = `${ORDER_API}?action=mark_paid&order_id=${encodeURIComponent(o.id)}&method=cash`;
+          const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ order_id:o.id, method:'cash' }) });
+          const data = await jsonOrText(resp);
           if (!data.success) throw new Error(data.message || 'Thanh toán thất bại');
           await refresh();
           backdrop.style.display = 'none';
-          alert('Đã xác nhận thanh toán (tiền mặt) và trả bàn về trống.');
+          alert('Đã xác nhận thanh toán (tiền mặt).');
         } catch (e) {
           alert(e.message || 'Có lỗi xảy ra.');
-        } finally {
-          btnCash.disabled = false;
-        }
+        } finally { btnCash.disabled = false; }
       };
+
+      const btnTransfer = document.getElementById('btn-pay-transfer');
+      if (btnTransfer) {
+        btnTransfer.addEventListener('click', (e) => {
+          e.preventDefault();
+          const w = window.open(transferUrl, 'staff-payment', 'width=520,height=720');
+          if (!w) window.location.href = transferUrl;
+        });
+      }
 
       wireCallButtons(table);
     }
 
     function wireCallButtons(table){
       if (!table.has_call) return;
-      const btnAck = document.getElementById('btn-call-ack');
+      const btnAck  = document.getElementById('btn-call-ack');
       const btnDone = document.getElementById('btn-call-resolve');
 
       if (btnAck && table.call.status === 'open') {
@@ -320,111 +336,70 @@ function detectEvents(newData) {
           btnAck.disabled = true;
           try {
             const resp = await fetch(`${CALL_API}?action=ack`, {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({ id: table.call.id })
+              method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: table.call.id })
             });
-            const data = await resp.json();
+            const data = await jsonOrText(resp);
             if (!data.success) throw new Error(data.message || 'Không thể tiếp nhận');
             await refresh();
-            // reopen detail for updated state
-            const t = lastData.tables.find(x => x.table_number === table.table_number);
-            if (t) openDetail(t);
-          } catch (e) {
-            alert(e.message || 'Có lỗi xảy ra.');
-          } finally {
-            btnAck.disabled = false;
-          }
+            const t = lastData.tables.find(x => x.table_number === table.table_number); if (t) openDetail(t);
+          } catch (e) { alert(e.message || 'Có lỗi xảy ra.'); } finally { btnAck.disabled = false; }
         };
-      } else if (btnAck) {
-        // nếu không phải 'open' thì ẩn nút tiếp nhận
-        btnAck.style.display = 'none';
-      }
+      } else if (btnAck) { btnAck.style.display = 'none'; }
 
       if (btnDone) {
         btnDone.onclick = async () => {
           btnDone.disabled = true;
           try {
             const resp = await fetch(`${CALL_API}?action=resolve`, {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({ id: table.call.id })
+              method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: table.call.id })
             });
-            const data = await resp.json();
+            const data = await jsonOrText(resp);
             if (!data.success) throw new Error(data.message || 'Không thể hoàn tất');
             await refresh();
-            // Close modal nếu không còn call
-            const t = lastData.tables.find(x => x.table_number === table.table_number);
-            if (t && !t.has_call) {
-              // nếu hết call và không có gì khác cần xem
-              // vẫn giữ modal để staff tiếp tục thao tác thanh toán nếu muốn
-            }
-            // cập nhật lại modal
-            if (t) openDetail(t);
-          } catch (e) {
-            alert(e.message || 'Có lỗi xảy ra.');
-          } finally {
-                        btnDone.disabled = false;
-                      }
-                    };
-                  }
-                }
-            
-                function closeDetail() {
-                  backdrop.style.display = 'none';
-                  selectedTableNumber = null;
-                }
-            
-                if (btnClose) btnClose.onclick = closeDetail;
-                if (backdrop) backdrop.onclick = e => { if (e.target === backdrop) closeDetail(); };
-            
-                async function refresh() {
-                  try {
-                    const resp = await fetch(LIST_API);
-                    const data = await resp.json();
-                    if (!data.success) throw new Error(data.message || 'API error');
-                    detectEvents(data); // <-- phát hiện và phát âm nếu có sự kiện mới
-                    lastData = data;
-                    render();
-                  } catch (e) {
-                    console.error('Refresh error:', e);
-                    alert('Không thể tải dữ liệu: ' + e.message);
-                  }
-                }
-            
-                function render() {
-                  if (!lastData) return;
-                  renderFloors(lastData.floors || []);
-                  renderGrid();
-                  if (selectedFloor === 'all') {
-                    setSummaryAll(lastData.summary || {});
-                  } else {
-                    const floorAgg = (lastData.floors || []).find(f => String(f.floor) === String(selectedFloor));
-                    setSummaryFloor(floorAgg);
-                  }
-                }
-            
-                if (btnRefresh) btnRefresh.onclick = refresh;
-            
-                // Auto refresh
-                function startTimer() {
-                  if (timer) clearInterval(timer);
-                  timer = setInterval(refresh, 5000);
-                }
-                function stopTimer() {
-                  if (timer) clearInterval(timer);
-                  timer = null;
-                }
-            
-                startTimer();
-                refresh();
-            
-                window.addEventListener('beforeunload', stopTimer);
-              }
-            
-              if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-              } else {
-                init();
-              }
-            })();
+            const t = lastData.tables.find(x => x.table_number === table.table_number); if (t) openDetail(t);
+          } catch (e) { alert(e.message || 'Có lỗi xảy ra.'); } finally { btnDone.disabled = false; }
+        };
+      }
+    }
+
+    function closeDetail(){ backdrop.style.display = 'none'; selectedTableNumber = null; }
+    if (btnClose) btnClose.onclick = closeDetail;
+    if (backdrop) backdrop.onclick = e => { if (e.target === backdrop) closeDetail(); };
+
+    async function refresh() {
+      try {
+        const resp = await fetch(LIST_API);
+        const data = await jsonOrText(resp);
+        detectEvents(data);
+        lastData = data;
+        render();
+      } catch (e) {
+        console.error('Refresh error:', e);
+        alert('Không thể tải dữ liệu: ' + (e.message || e));
+      }
+    }
+
+    function render(){
+      if (!lastData) return;
+      renderFloors(lastData.floors || []);
+      renderGrid();
+      if (selectedFloor === 'all') setSummaryAll(lastData.summary || {});
+      else {
+        const floorAgg = (lastData.floors || []).find(f => String(f.floor) === String(selectedFloor));
+        setSummaryFloor(floorAgg);
+      }
+    }
+
+    if (btnRefresh) btnRefresh.onclick = refresh;
+
+    function startTimer(){ if (timer) clearInterval(timer); timer = setInterval(refresh, 1000); }
+    function stopTimer(){ if (timer) clearInterval(timer); timer = null; }
+
+    startTimer();
+    refresh();
+    window.addEventListener('beforeunload', stopTimer);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

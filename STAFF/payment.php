@@ -1,6 +1,5 @@
 <?php
 session_start();
-// Tuỳ bạn muốn cho ai mở trang này. Nếu chỉ Staff:
 if (!isset($_SESSION['user_id'])) {
   header("Location: ../functions/loginStaff.php");
   exit();
@@ -9,10 +8,7 @@ require_once '../functions/database.php';
 
 // Lấy order_id
 $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
-if ($order_id <= 0) {
-    http_response_code(400);
-    die('Thiếu order_id');
-}
+if ($order_id <= 0) { http_response_code(400); die('Thiếu order_id'); }
 
 // Kiểm tra schema linh hoạt
 $hasPaymentStatus = $conn->query("SHOW COLUMNS FROM orders LIKE 'payment_status'")->num_rows > 0;
@@ -25,19 +21,14 @@ if ($hasPaymentStatus) $sql .= ", payment_status";
 if ($hasRefCode)       $sql .= ", ref_code";
 if ($hasStatus && !$hasPaymentStatus) $sql .= ", status";
 $sql .= ", created_at FROM orders WHERE id = ?";
-
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $order_id);
 $stmt->execute();
 $res = $stmt->get_result();
 $order = $res->fetch_assoc();
+if (!$order) { http_response_code(404); die('Không tìm thấy đơn hàng'); }
 
-if (!$order) {
-    http_response_code(404);
-    die('Không tìm thấy đơn hàng');
-}
-
-// Lấy floor của bàn từ bảng tables
+// Lấy floor của bàn
 $stmt2 = $conn->prepare("SELECT floor FROM tables WHERE table_number = ?");
 $stmt2->bind_param("i", $order['table_number']);
 $stmt2->execute();
@@ -45,33 +36,27 @@ $res2 = $stmt2->get_result();
 $table_info = $res2->fetch_assoc();
 $floor = $table_info ? intval($table_info['floor']) : 1;
 
-// Chuẩn hoá hiển thị trạng thái thanh toán
+// Chuẩn hoá trạng thái thanh toán
 $payment_status = 'pending';
-if ($hasPaymentStatus) {
-    $payment_status = $order['payment_status'] ?? 'pending';
-} elseif ($hasStatus) {
-    $payment_status = (isset($order['status']) && $order['status'] === 'paid') ? 'paid' : 'pending';
-}
+if ($hasPaymentStatus) $payment_status = $order['payment_status'] ?? 'pending';
+elseif ($hasStatus)     $payment_status = (isset($order['status']) && $order['status'] === 'paid') ? 'paid' : 'pending';
+$isPaid = ($payment_status === 'paid');
 
 // Mã tham chiếu
-$ref_code = '';
-if ($hasRefCode && !empty($order['ref_code'])) {
-    $ref_code = $order['ref_code'];
-} else {
-    $ref_code = 'CF' . strtoupper(dechex($order['id'])) . '-' . date('d');
-}
+$ref_code = ($hasRefCode && !empty($order['ref_code'])) ? $order['ref_code'] : ('CF' . strtoupper(dechex($order['id'])) . '-' . date('d'));
 
-// Thông tin tài khoản nhận (có thể đưa vào config)
+// Thông tin tài khoản nhận
 $BANK_ACCOUNT_NAME   = 'CALM SPACE';
 $BANK_ACCOUNT_NUMBER = '0367903437';
 $BANK_NAME           = 'VPBank';
 
-// BASE_URL (nếu có)
+// BASE_URL
 $baseUrl = '/';
 if (file_exists(__DIR__ . '/../includes/config.php')) {
-    include __DIR__ . '/../includes/config.php';
-    if (defined('BASE_URL')) $baseUrl = BASE_URL;
+  include __DIR__ . '/../includes/config.php';
+  if (defined('BASE_URL')) $baseUrl = BASE_URL;
 }
+$baseUrl = rtrim($baseUrl, '/') . '/';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -81,9 +66,12 @@ if (file_exists(__DIR__ . '/../includes/config.php')) {
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>assets/css/payment.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    body { background:#f7f9fc; }
+    .payment-container{ max-width:680px; margin:20px auto; background:#fff; border:1px solid #e6e8ee; border-radius:12px; padding:18px 20px; }
     .btn{padding:8px 12px;border-radius:8px;border:1px solid #d0d7de;background:#fff;cursor:pointer}
     .btn-primary{background:#0b72cf;color:#fff;border-color:#0a66c2}
     .status-pill{display:inline-block;padding:2px 8px;border:1px solid #d0d7de;border-radius:999px;margin-left:6px}
+    .hint{margin:10px 0; color:#5b6574; background:#f9fbff; border:1px dashed #cfe0ff; padding:8px 10px; border-radius:8px;}
   </style>
 </head>
 <body>
@@ -100,48 +88,72 @@ if (file_exists(__DIR__ . '/../includes/config.php')) {
     <p>Số TK: <strong><?php echo htmlspecialchars($BANK_ACCOUNT_NUMBER); ?></strong></p>
     <p>Nội dung: <strong><?php echo htmlspecialchars($ref_code); ?></strong> (vui lòng ghi đúng để đối soát)</p>
 
-    <div class="hint">
-      Sau khi khách hàng chuyển khoản xong, hãy bấm “Xác nhận đã nhận tiền” để hoàn tất đơn và trả bàn về trống.
-    </div>
+    <div class="hint">Sau khi khách chuyển khoản xong, bấm “Xác nhận đã nhận tiền” để hoàn tất (lưu payment_method=bank).</div>
 
     <div class="status" style="margin-top:10px">
       Trạng thái thanh toán:
       <strong id="pay-status"><?php echo htmlspecialchars($payment_status); ?></strong>
-      <span class="status-pill" id="status-pill"><?php echo htmlspecialchars($payment_status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'); ?></span>
+      <span class="status-pill" id="status-pill"><?php echo htmlspecialchars($isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'); ?></span>
     </div>
 
     <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn btn-primary" id="btn-confirm-received">Xác nhận đã nhận tiền</button>
-      <a class="btn" href="<?php echo htmlspecialchars($baseUrl); ?>STAFF/floor.php">Quay lại Sơ đồ</a>
+      <button class="btn btn-primary" id="btn-confirm-received" <?php echo $isPaid ? 'disabled' : ''; ?>>
+        <?php echo $isPaid ? 'Đã thanh toán' : 'Xác nhận đã nhận tiền'; ?>
+      </button>
+      <a class="btn" id="btn-back" href="<?php echo htmlspecialchars($baseUrl); ?>STAFF/floor.php">Quay lại Sơ đồ</a>
     </div>
   </div>
 
   <script>
     (function(){
-      const btn = document.getElementById('btn-confirm-received');
-      const statusEl = document.getElementById('pay-status');
-      const pillEl = document.getElementById('status-pill');
+      const ORDER_ID = <?php echo (int)$order_id; ?>;
+      const BASE_URL = <?php echo json_encode($baseUrl); ?>;
 
-      if (btn) {
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
+      const btnConfirm = document.getElementById('btn-confirm-received');
+      const btnBack    = document.getElementById('btn-back');
+      const statusEl   = document.getElementById('pay-status');
+      const pillEl     = document.getElementById('status-pill');
+
+      if (btnBack) {
+        btnBack.addEventListener('click', function(e){
           try {
-            const resp = await fetch('../functions/staff_order_api.php?action=mark_paid', {
+            if (window.opener && !window.opener.closed) {
+              e.preventDefault(); window.close();
+              setTimeout(()=>{ location.href = BASE_URL + 'STAFF/floor.php'; }, 400);
+            }
+          } catch (err) {
+            e.preventDefault(); location.href = BASE_URL + 'STAFF/floor.php';
+          }
+        });
+      }
+
+      if (btnConfirm) {
+        btnConfirm.addEventListener('click', async () => {
+          btnConfirm.disabled = true;
+          try {
+            // Gửi cả body và query để fallback chắc chắn
+            const url = `../functions/staff_order_api.php?action=mark_paid&order_id=${ORDER_ID}&method=bank`;
+            const resp = await fetch(url, {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ order_id: <?php echo (int)$order_id; ?> })
+              body: JSON.stringify({ order_id: ORDER_ID, method: 'bank' })
             });
-            const data = await resp.json();
+            const ct = (resp.headers.get('content-type') || '').toLowerCase();
+            const data = ct.includes('application/json') ? await resp.json() : { success:false, message: await resp.text() };
             if (!data.success) throw new Error(data.message || 'Xác nhận thất bại');
 
-            // Cập nhật UI
             statusEl.textContent = 'paid';
-            pillEl.textContent = 'Đã thanh toán';
-            alert('Đã xác nhận tiền chuyển khoản. Bàn đã được trả về trống.');
+            pillEl.textContent   = 'Đã thanh toán';
+            btnConfirm.textContent = 'Đã thanh toán';
+            console.log('applied_payment_method:', data.applied_payment_method);
+
+            let notified = false;
+            try { if (window.opener && !window.opener.closed) { window.opener.postMessage({ type:'staff-payment-success', order_id: ORDER_ID }, '*'); notified = true; } } catch (e) {}
+            if (notified) { window.close(); setTimeout(()=>{ location.href = BASE_URL + 'STAFF/floor.php'; }, 500); }
+            else { location.href = BASE_URL + 'STAFF/floor.php'; }
           } catch (e) {
             alert(e.message || 'Có lỗi xảy ra.');
-          } finally {
-            btn.disabled = false;
+            btnConfirm.disabled = false;
           }
         });
       }

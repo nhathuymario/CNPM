@@ -114,7 +114,7 @@ if ($action === 'list') {
       if ($order) {
         $lineItems = db_query_all(
           $dbc,$dbType,
-          "SELECT oi.dish_id AS id, d.name, oi.price, oi.quantity, d.image
+          "SELECT oi.id AS order_item_id, oi.dish_id AS id, d.name, oi.price, oi.quantity, d.image
            FROM order_items oi
            LEFT JOIN dishes d ON d.id = oi.dish_id
            WHERE oi.order_id = ?",
@@ -124,6 +124,7 @@ if ($action === 'list') {
         else {
           $lineItems = array_map(function($r){
             return [
+              'order_item_id' => (int)$r['order_item_id'],
               'id' => (int)$r['id'],
               'name' => $r['name'] ?? '',
               'price' => isset($r['price']) ? (float)$r['price'] : 0,
