@@ -115,17 +115,25 @@
       });
     }
 
-    // Mini modal: xác thực Admin + lý do
-    function promptAdmin(reasonDefault=''){
+    // Mini modal: xác thực Admin + số lượng + lý do
+    function promptAdminQty(currentQty=1, reasonDefault=''){
       return new Promise(resolve=>{
+        const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
         const wrap=document.createElement('div');
         wrap.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+        const qtyBlock = `
+          <div>
+            <label style="display:block;margin:8px 0 4px 2px;color:#374151;font-size:12px">Số lượng cần hủy</label>
+            <input id="adm-delqty" type="number" min="1" max="${currentQty||1}" value="${currentQty>1?1:1}" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;width:120px">
+            <span style="margin-left:6px;color:#6b7280">/ ${currentQty||1}</span>
+          </div>`;
         wrap.innerHTML=`
           <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;width:360px;max-width:92%">
             <h3 style="margin:0 0 8px 0;color:#111827;font-size:16px">Xác nhận quyền Admin</h3>
             <div style="display:flex;flex-direction:column;gap:8px">
               <input id="adm-user" placeholder="Tài khoản Admin" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
               <input id="adm-pass" type="password" placeholder="Mật khẩu" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+              ${qtyBlock}
               <input id="adm-reason" placeholder="Lý do xóa (tuỳ chọn)" style="padding:8px;border:1px solid #d1d5db;border-radius:8px" value="${reasonDefault?String(reasonDefault).replace(/"/g,'&quot;'):''}">
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
@@ -138,8 +146,17 @@
         $('#adm-user').focus();
         function done(v){ document.body.removeChild(wrap); resolve(v); }
         $('#adm-cancel').onclick=()=>done(null);
-        $('#adm-ok').onclick=()=>{ const u=$('#adm-user').value.trim(), p=$('#adm-pass').value, r=$('#adm-reason').value.trim(); if(!u||p===''){ alert('Vui lòng nhập tài khoản và mật khẩu Admin'); return;} done({username:u,password:p,reason:r}); };
-        wrap.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); done(null);} if(e.key==='Enter'){ $('#adm-ok').click(); }});
+        $('#adm-ok').onclick=()=>{
+          const u=$('#adm-user').value.trim(), p=$('#adm-pass').value, r=$('#adm-reason').value.trim();
+          let dq = parseInt($('#adm-delqty').value,10);
+          dq = clamp(isNaN(dq)?1:dq, 1, currentQty||1);
+          if(!u || p===''){ alert('Vui lòng nhập tài khoản và mật khẩu Admin'); return; }
+          done({ username:u, password:p, reason:r, delQty:dq });
+        };
+        wrap.addEventListener('keydown',e=>{
+          if(e.key==='Escape'){ e.preventDefault(); done(null); }
+          if(e.key==='Enter'){ $('#adm-ok').click(); }
+        });
       });
     }
 
@@ -186,7 +203,7 @@
         </style>
       `;
 
-      // Hàng món (đã bỏ dòng “PTTT hiện tại” theo yêu cầu)
+      // Hàng món (đã bỏ dòng “PTTT hiện tại”)
       const rows = (o.items || []).map(i => `
         <tr data-oi="${i.order_item_id || ''}">
           <td class="sf-col-name">${i.name}</td>
@@ -217,7 +234,7 @@
         </div>
         <table class="sf-detail-table">
           <colgroup>
-            <col />               <!-- Món -->
+            <col />                 <!-- Món -->
             <col style="width:72px" />   <!-- SL -->
             <col style="width:110px" />  <!-- Đơn giá -->
             <col style="width:130px" />  <!-- Thành tiền -->
@@ -242,7 +259,7 @@
         </table>
       `;
 
-      // Xóa món: chấp nhận cả trường hợp không có order_item_id (đơn cũ)
+      // Xóa theo số lượng (có/không có order_item_id)
       const tbody = bodyEl.querySelector('tbody');
       if (tbody) {
         tbody.addEventListener('click', async (e) => {
@@ -250,17 +267,21 @@
           if (!btn) return;
           e.stopPropagation();
 
-          const auth = await promptAdmin(`Xóa ${(btn.dataset.name||'')} x${btn.dataset.qty||''}`);
+          const currentQty = parseInt(btn.dataset.qty || '1', 10) || 1;
+          const auth = await promptAdminQty(currentQty, `Xóa ${(btn.dataset.name||'')} x${currentQty}`);
           if (!auth) return;
 
+          const delQty = Math.max(1, Math.min(currentQty, parseInt(auth.delQty || '1', 10) || 1));
           const payload = {
             order_id: o.id,
             order_item_id: parseInt(btn.dataset.oi || '0', 10) || 0,
             admin_username: auth.username,
             admin_password: auth.password,
             reason: auth.reason || null,
+            delete_qty: delQty,
+            // fallback JSON
             dish_id: btn.dataset.dish ? parseInt(btn.dataset.dish,10) : null,
-            quantity: btn.dataset.qty ? parseInt(btn.dataset.qty,10) : null,
+            quantity: currentQty,
             price: btn.dataset.price ? parseFloat(btn.dataset.price) : null,
             name: btn.dataset.name || null
           };
@@ -277,7 +298,7 @@
             await refresh();
             const t = lastData.tables.find(x => String(x.table_number) === String(table.table_number));
             if (t) openDetail(t);
-            alert('Đã xóa món.');
+            alert(`Đã hủy ${delQty} món.`);
           } catch (err) {
             alert(err.message || 'Có lỗi khi xóa món.');
           } finally {
@@ -341,10 +362,17 @@
             const data = await jsonOrText(resp);
             if (!data.success) throw new Error(data.message || 'Không thể tiếp nhận');
             await refresh();
-            const t = lastData.tables.find(x => x.table_number === table.table_number); if (t) openDetail(t);
-          } catch (e) { alert(e.message || 'Có lỗi xảy ra.'); } finally { btnAck.disabled = false; }
+            const t = lastData.tables.find(x => x.table_number === table.table_number);
+            if (t) openDetail(t);
+          } catch (e) {
+            alert(e.message || 'Có lỗi xảy ra.');
+          } finally {
+            btnAck.disabled = false;
+          }
         };
-      } else if (btnAck) { btnAck.style.display = 'none'; }
+      } else if (btnAck) {
+        btnAck.style.display = 'none';
+      }
 
       if (btnDone) {
         btnDone.onclick = async () => {
@@ -356,8 +384,13 @@
             const data = await jsonOrText(resp);
             if (!data.success) throw new Error(data.message || 'Không thể hoàn tất');
             await refresh();
-            const t = lastData.tables.find(x => x.table_number === table.table_number); if (t) openDetail(t);
-          } catch (e) { alert(e.message || 'Có lỗi xảy ra.'); } finally { btnDone.disabled = false; }
+            const t = lastData.tables.find(x => x.table_number === table.table_number);
+            if (t) openDetail(t);
+          } catch (e) {
+            alert(e.message || 'Có lỗi xảy ra.');
+          } finally {
+            btnDone.disabled = false;
+          }
         };
       }
     }

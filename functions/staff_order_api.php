@@ -2,7 +2,7 @@
 // GET ?action=detail&order_id=...
 // GET ?action=latest
 // POST ?action=mark_paid  body/query: { order_id, method? ('cash'|'bank') }
-// POST ?action=delete_item body: { order_id, order_item_id?, admin_username, admin_password, reason?, dish_id?, quantity?, price?, name? }
+// POST ?action=delete_item body: { order_id, order_item_id?, admin_username, admin_password, delete_qty?, reason?, dish_id?, quantity?, price?, name? }
 // Luôn trả JSON.
 header('Content-Type: application/json; charset=utf-8');
 session_start();
@@ -212,11 +212,13 @@ if ($method==='POST' && $action==='delete_item'){
   $admin_pass    = (string)($body['admin_password'] ?? '');
   $reason        = isset($body['reason']) ? trim($body['reason']) : null;
 
-  // Fallback params (đơn cũ)
-  $dish_id  = isset($body['dish_id']) ? (int)$body['dish_id'] : null;
-  $qty_in   = isset($body['quantity']) ? (int)$body['quantity'] : null;
-  $price_in = isset($body['price']) ? (float)$body['price'] : null;
-  $name_in  = isset($body['name']) ? (string)$body['name'] : null;
+  // Fallback params (đơn cũ và/hoặc hỗ trợ partial)
+  $dish_id    = isset($body['dish_id']) ? (int)$body['dish_id'] : null;
+  $qty_input  = isset($body['quantity']) ? (int)$body['quantity'] : null; // qty hiện tại theo client (tham khảo)
+  $price_in   = isset($body['price']) ? (float)$body['price'] : null;
+  $name_in    = isset($body['name']) ? (string)$body['name'] : null;
+  $delete_qty = isset($body['delete_qty']) ? (int)$body['delete_qty'] : 1;
+  if ($delete_qty < 1) $delete_qty = 1;
 
   if ($order_id<=0){
     http_response_code(400);
@@ -237,20 +239,24 @@ if ($method==='POST' && $action==='delete_item'){
     if ($dbType==='pdo') $dbc->beginTransaction(); else $dbc->begin_transaction();
 
     if ($order_item_id > 0) {
-      // Xóa theo dòng order_items (đơn mới)
+      // Xóa/giảm theo order_items (khóa dòng để tránh race)
       $row = db_query_one(
         $dbc,$dbType,
         "SELECT oi.id AS order_item_id, oi.order_id, o.table_number, oi.dish_id, d.name AS dish_name, oi.price, oi.quantity
          FROM order_items oi
          LEFT JOIN orders o ON o.id = oi.order_id
          LEFT JOIN dishes d ON d.id = oi.dish_id
-         WHERE oi.id = ? AND oi.order_id = ?",
+         WHERE oi.id = ? AND oi.order_id = ?
+         FOR UPDATE",
         [$order_item_id, $order_id]
       );
       if (!$row){ throw new Exception('Không tìm thấy món cần xóa'); }
 
-      $line_total = (float)$row['price'] * (int)$row['quantity'];
+      $curQty = (int)$row['quantity'];
+      $delQty = min(max(1,$delete_qty), $curQty);
+      $removed_total = (float)$row['price'] * $delQty;
 
+      // Ghi log: quantity = số lượng đã xóa
       db_exec(
         $dbc,$dbType,
         "INSERT INTO order_item_deletions
@@ -261,43 +267,49 @@ if ($method==='POST' && $action==='delete_item'){
           (int)$row['table_number'],
           (int)$row['dish_id'],
           $row['dish_name'],
-          (int)$row['quantity'],
+          $delQty,
           (float)$row['price'],
-          $line_total,
+          $removed_total,
           $reason,
           $admin_id
         ]
       );
 
-      db_exec($dbc,$dbType, "DELETE FROM order_items WHERE id = ?", [ $order_item_id ]);
-      db_exec($dbc,$dbType, "UPDATE orders SET total = GREATEST(0, total - ?) WHERE id = ?", [ $line_total, (int)$row['order_id'] ]);
+      if ($delQty < $curQty) {
+        db_exec($dbc,$dbType, "UPDATE order_items SET quantity = quantity - ? WHERE id = ?", [ $delQty, (int)$row['order_item_id'] ]);
+      } else {
+        db_exec($dbc,$dbType, "DELETE FROM order_items WHERE id = ?", [ (int)$row['order_item_id'] ]);
+      }
+
+      db_exec($dbc,$dbType, "UPDATE orders SET total = GREATEST(0, total - ?) WHERE id = ?", [ $removed_total, (int)$row['order_id'] ]);
     } else {
-      // Fallback: xóa theo JSON orders.items (đơn cũ)
+      // Fallback: xóa/giảm theo JSON orders.items
       $ord = db_query_one($dbc,$dbType,"SELECT id, table_number, items, total FROM orders WHERE id = ? FOR UPDATE", [$order_id]);
       if (!$ord) throw new Exception('Order not found');
 
       $items = normalize_items_json($ord['items'] ?? '[]');
       if (!$items || count($items)===0) throw new Exception('Đơn không có món (JSON trống)');
 
-      // Tìm item khớp: ưu tiên dish_id, kế đến name+price(+qty)
+      // Tìm item khớp: ưu tiên dish_id, kế đến name+price
       $idx = null;
       foreach ($items as $k=>$it) {
         $match = false;
         if ($dish_id && isset($it['id']) && (int)$it['id'] === (int)$dish_id) $match = true;
         else if ($name_in && strcasecmp($name_in, (string)$it['name'])===0) {
           if ($price_in !== null && isset($it['price']) && (float)$it['price'] == (float)$price_in) $match = true;
-          if ($qty_in !== null && isset($it['quantity']) && (int)$it['quantity'] == (int)$qty_in) $match = true;
+          else if ($price_in === null) $match = true;
         }
         if ($match) { $idx = $k; break; }
       }
       if ($idx === null) throw new Exception('Không tìm thấy món phù hợp để xóa (JSON)');
 
       $it = $items[$idx];
-      $q  = isset($it['quantity']) ? (int)$it['quantity'] : (int)($qty_in ?? 1);
-      $p  = isset($it['price']) ? (float)$it['price'] : (float)($price_in ?? 0);
-      $n  = $it['name'] ?? $name_in ?? ('Dish#' . ($it['id'] ?? ''));
-      $d  = isset($it['id']) ? (int)$it['id'] : (int)($dish_id ?? 0);
-      $line_total = $q * $p;
+      $curQty = isset($it['quantity']) ? (int)$it['quantity'] : max(1,(int)$qty_input);
+      $unitPrice = isset($it['price']) ? (float)$it['price'] : (float)$price_in;
+      if ($unitPrice < 0) $unitPrice = 0;
+      $delQty = min(max(1,$delete_qty), max(1,$curQty));
+      $removed_total = $unitPrice * $delQty;
+      $newQty = $curQty - $delQty;
 
       // Ghi log
       db_exec(
@@ -308,26 +320,30 @@ if ($method==='POST' && $action==='delete_item'){
         [
           (int)$ord['id'],
           (int)$ord['table_number'],
-          $d ?: null,
-          $n,
-          $q,
-          $p,
-          $line_total,
+          isset($it['id']) ? (int)$it['id'] : ($dish_id ?: null),
+          $it['name'] ?? $name_in ?? ('Dish#' . ($it['id'] ?? '')),
+          $delQty,
+          $unitPrice,
+          $removed_total,
           $reason,
           $admin_id
         ]
       );
 
-      // Xóa item khỏi JSON
-      array_splice($items, $idx, 1);
-      $newJson = json_encode($items, JSON_UNESCAPED_UNICODE);
+      // Cập nhật JSON
+      if ($newQty > 0) {
+        $items[$idx]['quantity'] = $newQty;
+      } else {
+        array_splice($items, $idx, 1);
+      }
+      $newJson = json_encode(array_values($items), JSON_UNESCAPED_UNICODE);
       if ($newJson === false) throw new Exception('Không thể ghi lại JSON items');
 
-      db_exec($dbc,$dbType, "UPDATE orders SET items=?, total=GREATEST(0,total-?) WHERE id = ?", [ $newJson, $line_total, (int)$ord['id'] ]);
+      db_exec($dbc,$dbType, "UPDATE orders SET items=?, total=GREATEST(0,total-?) WHERE id = ?", [ $newJson, $removed_total, (int)$ord['id'] ]);
     }
 
     if ($dbType==='pdo') $dbc->commit(); else $dbc->commit();
-    echo json_encode(['success'=>true,'message'=>'Đã xóa món và ghi log.']);
+    echo json_encode(['success'=>true,'message'=>'Đã cập nhật số lượng/xóa món và ghi log.']);
   } catch (Throwable $e) {
     if ($dbType==='pdo'){ if ($dbc->inTransaction()) $dbc->rollBack(); } else { $dbc->rollback(); }
     http_response_code(500);
