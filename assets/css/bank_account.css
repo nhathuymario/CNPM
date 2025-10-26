@@ -1,0 +1,97 @@
+body {
+  background: #f6faf7;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+.ql-container {
+  margin: 50px auto;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 7px;
+  padding: 38px 38px 26px 38px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+}
+.ql-form {
+  display: flex;
+  gap: 32px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.ql-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+.ql-field label {
+  font-weight: 600;
+  color: #424242;
+  margin-bottom: 8px;
+}
+.ql-field input,
+.ql-field select {
+  border: 1px solid #3aa76d;
+  border-radius: 4px;
+  padding: 7px 11px;
+  font-size: 1.13rem;
+  background: #fafdfa;
+  transition: border 0.2s;
+}
+.ql-field input:focus,
+.ql-field select:focus {
+  outline: none;
+  border-color: #1e9462;
+}
+.ql-action {
+  margin-top: 24px;
+}
+.ql-btn {
+  background: #3aa76d;
+  color: #fff;
+  border: none;
+  font-size: 1.11rem;
+  font-weight: 500;
+  padding: 12px 34px;
+  border-radius: 6px;
+  transition: background 0.18s;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.ql-btn:hover {
+  background: #1e9462;
+}
+.ql-error {
+  color: #b6002b;
+  margin-top: 18px;
+}
+.ql-success {
+  color: #2b7a47;
+  margin-top: 18px;
+  font-weight: bold;
+}
+.ql-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  background: #fff;
+}
+.ql-table th,
+.ql-table td {
+  border: 1px solid #b2e2ce;
+  padding: 9px 12px;
+  text-align: left;
+}
+.ql-table th {
+  background: #e7f8f0;
+  font-weight: 700;
+}
+.ql-table tr:nth-child(even) {
+  background: #f5fdf9;
+}
+.ql-table a {
+  color: #228a5c;
+  text-decoration: underline;
+}
+.ql-table a:hover {
+  color: #145c3a;
+}

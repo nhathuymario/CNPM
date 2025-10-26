@@ -27,6 +27,11 @@
             <span>Số bàn</span>
         </a>
 
+        <a class="header-btn" href="bank_account.php">
+        <i class="fa-solid fa-table-list"></i> 
+            <span>Tổng ca</span>
+        </a>
+
         </a>
         <a class="header-btn" href="total_report.php">
         <i class="fa-solid fa-table-list"></i> 

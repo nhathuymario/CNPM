@@ -151,7 +151,7 @@ h3 {
   cursor: pointer;
 }
 .pay-box.active {
-  background-color: #8ebce5;
+  background-color: #98bfe1;
   border-color: #0b72cf;
   box-shadow: 0 1px 0 rgba(11, 114, 207, 0.08);
 }
