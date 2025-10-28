@@ -11,6 +11,7 @@
     <div class="sidebar-top">Tổng quát</div>
     <a class="sidebar-item" href="index.php"><i class="fa-solid fa-clipboard"></i>Chỉnh menu</a>
     <a class="sidebar-item" href="table.php"><i class="fa-solid fa-map"></i>Số bàn</a>
+    <a class="sidebar-item" href="bank_account.php"><i class="fa-solid fa-qrcode"></i>QR Pay</a>
     <a class="sidebar-item" href="total_report.php"><i class="fa-solid fa-table-list"></i>Tổng ca</a>
     <a class="sidebar-item" href="#"><i class="fa-solid fa-comments"></i></i>Trợ giúp</a>
 </div>
@@ -28,8 +29,8 @@
         </a>
 
         <a class="header-btn" href="bank_account.php">
-        <i class="fa-solid fa-table-list"></i> 
-            <span>Tổng ca</span>
+        <i class="fa-solid fa-qrcode"></i>
+            <span>QR Pay</span>
         </a>
 
         </a>
@@ -46,6 +47,9 @@
       <div id="user-menu" class="user-menu">
         <div class="menu-item user">
           <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
+        </div>
+        <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/change_password.php'">
+          Đổi mật khẩu
         </div>
         <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/logoutAdmin.php'">
           Đăng xuất

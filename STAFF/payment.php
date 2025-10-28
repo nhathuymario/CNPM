@@ -1,18 +1,17 @@
 <?php
 require_once '../functions/database.php';
 
-// Lấy id vietqr_link và order_id từ GET
-$vietqr_id = isset($_GET['vietqr_id']) ? intval($_GET['vietqr_id']) : 25;
+// Lấy order_id từ GET
 $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
 if ($order_id <= 0) die('Thiếu order_id');
 
-// 1. Lấy thông tin vietqr link
-$stmt = $conn->prepare("SELECT bank_code, account_no, template FROM vietqr_links WHERE id = ?");
-$stmt->bind_param("i", $vietqr_id);
+// 1. Lấy vietqr link mới nhất (theo created_at và id giảm dần)
+$stmt = $conn->prepare("SELECT id, bank_code, account_no, template FROM vietqr_links ORDER BY created_at DESC, id DESC LIMIT 1");
 $stmt->execute();
 $vietqr = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 if (!$vietqr) die('Không tìm thấy vietqr_link');
+$vietqr_id = $vietqr['id'];
 
 // 2. Lấy số tiền từ đơn hàng
 $stmt2 = $conn->prepare("SELECT total, table_number FROM orders WHERE id = ?");

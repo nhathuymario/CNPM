@@ -77,7 +77,7 @@ ob_start();
                 <?php foreach ($banks as $b): ?>
                     <option value="<?= htmlspecialchars($b['bank_code']) ?>"
                         <?= (isset($bank_code) && $bank_code === $b['bank_code']) ? 'selected' : '' ?>>
-                        (<?= htmlspecialchars($b['bank_code']) ?>) <?= htmlspecialchars($b['bank_name']) ?>
+                        <?= htmlspecialchars($b['bank_name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>

@@ -20,12 +20,6 @@ $isFloor = ($current === 'floor.php');
           <i class="fa-solid fa-map"></i> Sơ đồ
         </a>
         <a class="sidebar-item" href="#">
-          <i class="fa-solid fa-kitchen-set"></i> Trả món
-        </a>
-        <a class="sidebar-item" href="#">
-          <i class="fa-solid fa-warehouse"></i> Kho
-        </a>
-        <a class="sidebar-item" href="#">
           <i class="fa-solid fa-comments"></i> Trợ giúp
         </a>
       </div>
@@ -49,6 +43,9 @@ $isFloor = ($current === 'floor.php');
       <div id="user-menu" class="user-menu">
         <div class="menu-item user">
           <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
+        </div>
+        <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/change_passwordStaff.php'">
+          Đổi mật khẩu
         </div>
         <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/logoutStaff.php'">
           Đăng xuất

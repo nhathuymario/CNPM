@@ -1,32 +1,4 @@
 <?php
-// session_start();
-// require 'database.php';
-
-// $error = '';
-// if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-//     $username = trim($_POST['username']);
-//     $password = $_POST['password'];
-
-//     $sql = "SELECT * FROM users WHERE (username = ? OR email = ? OR phone = ?) AND password = ? LIMIT 1";
-//     $stmt = $conn->prepare($sql);
-//     $stmt->bind_param("ssss", $username, $username, $username, $password);
-//     $stmt->execute();
-//     $result = $stmt->get_result();
-//     $user = $result->fetch_assoc();
-
-//     if ($user) {
-//         $_SESSION['user_id'] = $user['id'];
-//         $_SESSION['username'] = $user['username'];
-//         $_SESSION['restaurant_id'] = $user['restaurant_id'];
-//         $_SESSION['role'] = $user['role']; // <--- QUAN TRỌNG
-//         header('Location: ../staff/index.php'); // hoặc về trang phù hợp
-//         exit();
-//     } else {
-//         $error = "Sai tài khoản hoặc mật khẩu!";
-//     }
-// }
-
-
 
 session_start();
 require 'database.php';
