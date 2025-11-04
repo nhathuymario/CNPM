@@ -38,7 +38,7 @@ html {
   padding: 0 14px;
   height: 44px;
 }
-.input-row .icon img {
+.input-row .icon {
   width: 22px;
   height: 22px;
   object-fit: contain;

@@ -1,0 +1,78 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  background: #f7fafc;
+}
+.main-content {
+  flex: 1 0 auto;
+  max-width: 1200px;
+  margin: 32px auto 12px auto;
+}
+.main-content h2 {
+  color: #1565c0;
+  font-size: 28px;
+  margin-bottom: 20px;
+  margin-top: 0;
+  font-weight: bold;
+}
+.deleted-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden; /* Để bo góc bên ngoài bảng */
+  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.05);
+}
+.deleted-orders-table th,
+.deleted-orders-table td {
+  border: 1px solid #d6e2f3;
+  padding: 10px 7px;
+  font-size: 15px;
+  text-align: center;
+}
+.deleted-orders-table th {
+  background: #1976d2;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #1976d2;
+}
+.deleted-orders-table tr:nth-child(even) {
+  background-color: #f3fafd;
+}
+.deleted-orders-table tr:hover {
+  background: #e3effe;
+  transition: background 0.13s;
+}
+.deleted-orders-table td small {
+  color: #666;
+}
+@media (max-width: 900px) {
+  .main-content {
+    padding: 0 8px;
+  }
+  .deleted-orders-table,
+  .deleted-orders-table th,
+  .deleted-orders-table td {
+    font-size: 13px;
+  }
+  .header-bar {
+    font-size: 21px;
+  }
+}
+.footer {
+  flex-shrink: 0;
+  background: #fff;
+  text-align: center;
+  padding: 24px 0 12px 0;
+  color: #333;
+  font-size: 16px;
+}
