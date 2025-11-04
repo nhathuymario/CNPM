@@ -13,7 +13,7 @@
     <a class="sidebar-item" href="table.php"><i class="fa-solid fa-map"></i>Số bàn</a>
     <a class="sidebar-item" href="bank_account.php"><i class="fa-solid fa-qrcode"></i>QR Pay</a>
     <a class="sidebar-item" href="total_report.php"><i class="fa-solid fa-table-list"></i>Tổng ca</a>
-    <a class="sidebar-item" href="#"><i class="fa-solid fa-comments"></i></i>Trợ giúp</a>
+    <a class="sidebar-item" href="shift_history.php"><i class="fa-solid fa-table-list"></i>Kết ca</a>
 </div>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
             
@@ -26,11 +26,6 @@
         <a class="header-btn" href="table.php">
         <i class="fa-solid fa-map"></i> 
             <span>Số bàn</span>
-        </a>
-
-        <a class="header-btn" href="bank_account.php">
-        <i class="fa-solid fa-qrcode"></i>
-            <span>QR Pay</span>
         </a>
 
         </a>

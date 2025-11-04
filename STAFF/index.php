@@ -29,6 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['end_shift'])) {
     $conn->query("UPDATE shifts SET end_time=NOW(), orders_count=$orders_count WHERE id=$shift_id");
     // Có thể thông báo hoặc redirect, ở đây reload lại trang
     header("Location: ".$_SERVER['PHP_SELF']);
+    // Đăng xuất tài khoản bằng cách hủy session
+    session_unset();
+    session_destroy();
+
+    // Chuyển hướng về trang đăng nhập (sửa login.php thành đúng file của bạn)
+    header("Location: ../functions/loginStaff.php");
     exit();
 }
 ?>
@@ -58,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['end_shift'])) {
             Ca bắt đầu: <b><?=date('d/m/Y H:i:s', strtotime($ca['start_time']))?></b>
         </div>
         <form method="post" style="margin-left: auto;">
-            <button type="submit" name="end_shift" class="btn-shift" onclick="return confirm('Kết thúc ca? Sau khi kết ca sẽ không thể thêm đơn vào ca này!')">Kết ca</button>
+            <button type="submit" name="end_shift" class="btn-shift" onclick="return confirm('Kết thúc ca? Sau khi kết ca sẽ không thể thêm đơn vào ca này!')" >Kết ca</button>
         </form>
     </div>
     <div class="order-table-scroll">
