@@ -109,3 +109,71 @@ body{background:var(--bg);}
   .product-grid{grid-template-columns:repeat(2,1fr)}
   .product-card img{height:100px}
 }
+/* ===== Header Order: 2 nút xanh đậm hơn header, KHÔNG bo, có vạch ngăn; không ảnh hưởng Staff/Admin ===== */
+.order-header{
+  --order-header-bg: #0b72cf; /* nền header */
+  --order-chip-bg:   #095fb1; /* xanh đậm cho 2 nút */
+}
+
+/* Biến link thành “nút phẳng” màu xanh đậm, bỏ gạch dưới, KHÔNG bo tròn */
+.order-header .header-left > .header-link,
+.order-header .header-left > .header-link:link,
+.order-header .header-left > .header-link:visited,
+.order-header .header-left > .header-link:hover,
+.order-header .header-left > .header-link:active,
+.order-header .header-left > .header-link:focus{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  height:40px !important;
+  padding:0 16px !important;
+  background:var(--order-chip-bg) !important;   /* xanh đậm hơn header */
+  color:#fff !important;
+  font-weight:700 !important;
+  text-decoration:none !important;              /* bỏ gạch dưới */
+  border:1px solid rgba(255,255,255,.65) !important;
+  border-radius:0 !important;                   /* KHÔNG bo tròn */
+  box-shadow:none !important;
+  outline:none !important;
+  cursor:pointer;
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+/* Hover: nền trắng, chữ/icon xanh giống Staff */
+.order-header .header-left > .header-link:hover,
+.order-header .header-left > .header-link:focus{
+  background:#fff !important;
+  color:var(--order-header-bg) !important;
+  border-color:#fff !important;
+}
+
+/* Icon tự nhận màu chữ (trắng bình thường, xanh khi hover) */
+.order-header .header-left > .header-link i,
+.order-header .header-left > .header-link svg,
+.order-header .header-left > .header-link img{
+  color:currentColor !important;
+  filter:none !important;
+}
+
+/* Vạch ngăn trắng cao, rõ giữa 2 nút (không phụ thuộc pseudo của theme khác) */
+.order-header .header-sep{
+  display:inline-block !important;
+  width:1px !important;
+  height:24px !important;
+  background:rgba(255,255,255,.85) !important;
+  margin:0 12px !important;
+}
+
+/* Reset mọi style “nút bo” cũ nếu còn lẫn (chỉ trong Order) */
+.order-header .header-btn,
+.order-header .header-btn.help-btn{
+  all:unset !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  height:40px !important;
+  padding:0 16px !important;
+  color:#fff !important;
+  font-weight:700 !important;
+  cursor:pointer;
+}

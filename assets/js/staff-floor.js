@@ -389,73 +389,60 @@
     }
 
     // Mini modal: xác thực Admin + số lượng + lý do
-    function promptAdminQty(currentQty = 1, reasonDefault = "") {
-      return new Promise((resolve) => {
-        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-        const wrap = document.createElement("div");
-        wrap.style.cssText =
-          "position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center";
-        const qtyBlock = `
-          <div>
-            <label style="display:block;margin:8px 0 4px 2px;color:#374151;font-size:12px">Số lượng cần hủy</label>
-            <input id="adm-delqty" type="number" min="1" max="${
-              currentQty || 1
-            }" value="${
-          currentQty > 1 ? 1 : 1
-        }" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;width:120px">
-            <span style="margin-left:6px;color:#6b7280">/ ${
-              currentQty || 1
-            }</span>
-          </div>`;
-        wrap.innerHTML = `
-          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;width:360px;max-width:92%">
-            <h3 style="margin:0 0 8px 0;color:#111827;font-size:16px">Xác nhận quyền Admin</h3>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <input id="adm-user" placeholder="Tài khoản Admin" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
-              <input id="adm-pass" type="password" placeholder="Mật khẩu" style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
-              ${qtyBlock}
-              <input id="adm-reason" placeholder="Lý do xóa (tuỳ chọn)" style="padding:8px;border:1px solid #d1d5db;border-radius:8px" value="${
-                reasonDefault
-                  ? String(reasonDefault).replace(/"/g, "&quot;")
-                  : ""
-              }">
-            </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-              <button id="adm-cancel" class="btn">Hủy</button>
-              <button id="adm-ok" class="btn btn-primary">Xác nhận</button>
-            </div>
-          </div>`;
-        document.body.appendChild(wrap);
-        const $ = (s) => wrap.querySelector(s);
-        $("#adm-user").focus();
-        function done(v) {
-          document.body.removeChild(wrap);
-          resolve(v);
-        }
-        $("#adm-cancel").onclick = () => done(null);
-        $("#adm-ok").onclick = () => {
-          const u = $("#adm-user").value.trim(),
-            p = $("#adm-pass").value,
-            r = $("#adm-reason").value.trim();
-          let dq = parseInt($("#adm-delqty").value, 10);
-          dq = clamp(isNaN(dq) ? 1 : dq, 1, currentQty || 1);
-          if (!u || p === "") {
-            alert("Vui lòng nhập tài khoản và mật khẩu Admin");
-            return;
-          }
-          done({ username: u, password: p, reason: r, delQty: dq });
-        };
-        wrap.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            done(null);
-          }
-          if (e.key === "Enter") {
-            $("#adm-ok").click();
-          }
-        });
-      });
+    // Mini modal: xác thực Admin + số lượng + lý do (đã bỏ gợi ý lý do mặc định)
+function promptAdminQty(currentQty = 1) {
+  return new Promise((resolve) => {
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const wrap = document.createElement("div");
+    wrap.style.cssText =
+      "position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center";
+
+    const qtyBlock = `
+      <div>
+        <label style="display:block;margin:8px 0 4px 2px;color:#374151;font-size:12px">Số lượng cần hủy</label>
+        <input id="adm-delqty" type="number" min="1" max="${currentQty || 1}" value="${currentQty > 1 ? 1 : 1}"
+               style="padding:8px;border:1px solid #d1d5db;border-radius:8px;width:120px">
+        <span style="margin-left:6px;color:#6b7280">/ ${currentQty || 1}</span>
+      </div>`;
+
+    wrap.innerHTML = `
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;width:360px;max-width:92%">
+        <h3 style="margin:0 0 8px 0;color:#111827;font-size:16px">Xác nhận quyền Admin</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input id="adm-user" placeholder="Tài khoản Admin"
+                 style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+          <input id="adm-pass" type="password" placeholder="Mật khẩu"
+                 style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+          ${qtyBlock}
+          <!-- Chỉ giữ placeholder mờ, KHÔNG set value mặc định -->
+          <input id="adm-reason" placeholder="Lý do hủy món"
+                 style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="adm-cancel" class="btn">Hủy</button>
+          <button id="adm-ok" class="btn btn-primary">Xác nhận</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(wrap);
+    const $ = (s) => wrap.querySelector(s);
+    $("#adm-user").focus();
+
+    function done(v) {
+      document.body.removeChild(wrap);
+      resolve(v);
     }
+    $("#adm-cancel").onclick = () => done(null);
+    $("#adm-ok").onclick = () => {
+      const u = $("#adm-user").value.trim();
+      const p = $("#adm-pass").value;
+      const r = $("#adm-reason").value.trim(); // người dùng tự nhập, không gợi ý
+      let dq = parseInt($("#adm-delqty").value, 10);
+      dq = clamp(dq, 1, currentQty || 1);
+      done({ user: u, pass: p, qty: dq, reason: r });
+    };
+  });
+}
 
     // Modal detail
     const backdrop = document.getElementById("detail-backdrop");

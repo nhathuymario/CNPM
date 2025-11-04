@@ -5,11 +5,11 @@
   if (!empty($_GET['k']))     $orderQuery['k'] = $_GET['k'];
   $orderHref = 'index.php' . (!empty($orderQuery) ? ('?' . http_build_query($orderQuery)) : '');
 
-  // Ưu tiên dùng biến đã có từ ORDER/index.php; fallback dùng $_GET
+  // Ưu tiên biến từ ORDER/index.php; fallback dùng $_GET
   $dataTable = isset($table_number) ? (int)$table_number : (isset($_GET['table']) ? (int)$_GET['table'] : '');
   $dataK     = isset($k) ? $k : (isset($_GET['k']) ? $_GET['k'] : '');
 ?>
-<header>
+<header class="order-header">
   <div class="header-bar">
     <div class="header-left">
       <span class="menu-icon" id="sidebarToggle" title="Mở menu">
@@ -21,7 +21,6 @@
         <a class="sidebar-item" href="<?php echo htmlspecialchars($orderHref); ?>">
           <i class="fa-solid fa-clipboard"></i>Order
         </a>
-        <!-- Trợ giúp trong sidebar: gọi API qua order-help.js -->
         <a class="sidebar-item"
            href="#"
            data-action="help"
@@ -35,18 +34,20 @@
 
       <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
 
-      <!-- Nút Order: thêm class help-btn để giống nút Trợ giúp -->
-      <a class="header-btn order-btn help-btn"
-         href="<?php echo htmlspecialchars($orderHref); ?>">
+      <!-- Link Order (không bo, dùng style riêng của Order) -->
+      <a class="header-link" href="<?php echo htmlspecialchars($orderHref); ?>">
         <i class="fa-solid fa-clipboard"></i>
         <span>Order</span>
       </a>
 
-      <!-- Nút Trợ giúp ngay cạnh Order (giữ nguyên) -->
-      <button
+      <!-- Vạch ngăn trắng giữa 2 nút -->
+      <span class="header-sep" aria-hidden="true"></span>
+
+      <!-- Link Trợ giúp (đồng nhất với Order) -->
+      <a
         id="callStaffBtn"
-        class="header-btn help-btn"
-        type="button"
+        class="header-link"
+        href="#"
         data-action="help"
         <?php if ($dataTable !== ''): ?>
           data-table="<?php echo htmlspecialchars($dataTable); ?>"
@@ -56,7 +57,7 @@
       >
         <i class="fa-solid fa-bell"></i>
         <span>Trợ giúp</span>
-      </button>
+      </a>
     </div>
   </div>
 </header>
