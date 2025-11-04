@@ -85,14 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2 class="login-title">ĐĂNG NHẬP</h2>
 
             <div class="input-row">
-                <span class="icon"><img src="../assets/images/icon-user.png" alt="User"></span>
-                <input type="text" name="username" placeholder="Tên đăng nhập/Email/SĐT" required>
-            </div>
-
-            <div class="input-row">
-                <span class="icon"><img src="../assets/images/icon-key.png" alt="Key"></span>
-                <input type="password" name="password" placeholder="Mật khẩu" required>
-            </div>
+    <span class="icon"><i class="fa-solid fa-user"></i></span>
+    <input type="text" name="username" placeholder="Tên đăng nhập/Email/SĐT" required>
+</div>
+<div class="input-row">
+    <span class="icon"><i class="fa-solid fa-key"></i></span>
+    <input type="password" name="password" placeholder="Mật khẩu" required>
+</div>
 
             <?php if ($error): ?>
                 <div class="error"><?= $error ?></div>

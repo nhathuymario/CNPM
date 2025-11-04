@@ -34,16 +34,12 @@ if (!$result) {
 <html>
 <head>
     <title>Lịch sử kết ca</title>
-    <style>
-        table { border-collapse: collapse; margin: 20px auto; width: 90%; }
-        th, td { border: 1px solid #334; padding: 8px 12px; text-align: center; }
-        th { background: #aab; }
-        tr:nth-child(even) { background: #eef2f8; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/shift_history.css">
 </head>
 <body>
-    <h2 style="text-align: center;">Lịch sử kết ca nhân viên</h2>
-    <table>
+<div class="main-content">
+<h2>Lịch sử kết ca nhân viên</h2>
+<table class="shift-history-table">
         <thead>
             <tr>
                 <th>ID Ca</th>

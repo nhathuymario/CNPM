@@ -25,6 +25,7 @@ include '../functions/database.php';
 // Xử lý thêm món
 if (isset($_POST['add_dish'])) {
     $name = $_POST['name'];
+    $category = $_POST['category'];
     $price = intval($_POST['price']);
     $image = $_POST['image'];
     $conn->query("INSERT INTO dishes (name, price, image) VALUES ('$name', $price, '$image')");
@@ -44,6 +45,7 @@ if (isset($_GET['delete_id'])) {
 if (isset($_POST['edit_dish'])) {
     $id = intval($_POST['id']);
     $name = $_POST['name'];
+    $category = $_POST['category'];
     $price = intval($_POST['price']);
     $image = $_POST['image'];
     $conn->query("UPDATE dishes SET name='$name', price=$price, image='$image' WHERE id=$id");
@@ -78,6 +80,14 @@ ob_start();
         <input type="text" name="name" required value="<?php echo $edit_dish ? $edit_dish['name'] : ''; ?>">
       </div>
       <div class="form-group">
+  <label>Phân loại món:</label>
+  <select name="category" required>
+    <option value="food" <?php if ($edit_dish && $edit_dish['category']=='food') echo 'selected'; ?>>Món ăn</option>
+    <option value="drink" <?php if ($edit_dish && $edit_dish['category']=='drink') echo 'selected'; ?>>Đồ uống</option>
+    <option value="other" <?php if ($edit_dish && $edit_dish['category']=='other') echo 'selected'; ?>>Khác</option>
+  </select>
+      </div>
+      <div class="form-group">
         <label>Giá (vnđ):</label>
         <input type="number" name="price" required value="<?php echo $edit_dish ? $edit_dish['price'] : ''; ?>">
       </div>
@@ -101,6 +111,7 @@ ob_start();
       <tr>
         <th>ID</th>
         <th>Tên món</th>
+        <th>Loại</th>
         <th>Giá</th>
         <th>Ảnh</th>
         <th>Thao tác</th>
@@ -109,6 +120,7 @@ ob_start();
       <tr>
         <td><?php echo $dish['id']; ?></td>
         <td><?php echo $dish['name']; ?></td>
+        <td><?php echo $dish['category']; ?></td>
         <td><?php echo number_format($dish['price']); ?>đ</td>
         <td><img src="<?php echo $dish['image']; ?>" class="dish-img"></td>
         <td>

@@ -77,21 +77,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Đăng nhập nhà hàng</title>
     <link rel="stylesheet" href="../assets/css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
     <div class="login-bg">
         <form class="login-box" method="POST">
             <h2 class="login-title">ĐĂNG NHẬP</h2>
-
             <div class="input-row">
-                <span class="icon"><img src="../assets/images/icon-user.png" alt="User"></span>
-                <input type="text" name="username" placeholder="Tên đăng nhập/Email/SĐT" required>
-            </div>
-
-            <div class="input-row">
-                <span class="icon"><img src="../assets/images/icon-key.png" alt="Key"></span>
-                <input type="password" name="password" placeholder="Mật khẩu" required>
-            </div>
+    <span class="icon"><i class="fa-solid fa-user"></i></span>
+    <input type="text" name="username" placeholder="Tên đăng nhập/Email/SĐT" required>
+</div>
+<div class="input-row">
+    <span class="icon"><i class="fa-solid fa-key"></i></span>
+    <input type="password" name="password" placeholder="Mật khẩu" required>
+</div>
 
             <?php if ($error): ?>
                 <div class="error"><?= $error ?></div>
