@@ -344,17 +344,24 @@ body {
 }
 
 /* ===== Flyout (panel nhỏ) hiển thị cạnh nút '…' ===== */
+/* Ghi đè định nghĩa .sf-flyout để xổ dọc (dropdown) ngay dưới nút */
 .sf-flyout {
-  position: fixed;                 /* đặt theo viewport để không bị container cắt */
+  position: fixed;
   background: #fff;
   border: 1px solid #d0d7de;
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(2, 6, 23, .15);
-  padding: 10px;
-  display: inline-flex;
-  align-items: center;
+  box-shadow: 0 10px 30px rgba(2,6,23,.15);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;   /* xổ dọc */
+  align-items: stretch;     /* nút full width */
   gap: 8px;
-  white-space: nowrap;             /* giữ 3 nút trên một hàng */
-  z-index: 5000;                   /* cao để nổi trên modal */
+  min-width: 180px;         /* rộng tối thiểu dễ bấm */
+  max-width: calc(100vw - 32px);
+  z-index: 5000;
 }
-.sf-flyout .btn { white-space: nowrap; }
+.sf-flyout .btn {
+  width: 100%;
+  text-align: left;         /* nhìn như menu dropdown */
+  white-space: nowrap;
+}

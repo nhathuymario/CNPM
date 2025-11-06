@@ -87,7 +87,7 @@
     const seenOrderIds = new Set();
     const seenCallOpenIds = new Set();
 
-    // Dấu hiệu "vừa thêm món" (highlight bàn khi đơn hiện tại tăng tổng tiền)
+    // Dấu hiệu "vừa thêm món"
     const ADDED_TTL_MS = 2 * 60 * 1000; // 2 phút
     const orderTotalsSeen = new Map(); // order_id -> last total
     const orderAddedFlash = new Map(); // order_id -> expire timestamp
@@ -217,7 +217,7 @@
     }
     ensureAddedBadgeStyles();
 
-    // Nhận kết quả từ payment.php
+    // Nhận kết quả từ payment.php (global)
     window.addEventListener("message", async (ev) => {
       const d = ev && ev.data;
       if (!d || typeof d !== "object") return;
@@ -238,9 +238,7 @@
             try {
               await jsonOrText(resp);
             } catch {}
-          } catch (err) {
-            // ignore network errors here
-          }
+          } catch (err) {}
           try {
             if (lastData && Array.isArray(lastData.tables)) {
               const t = lastData.tables.find(
@@ -256,8 +254,6 @@
         await refresh();
         const bd = document.getElementById("detail-backdrop");
         if (bd) bd.style.display = "none";
-
-        // Không dùng alert (popup). Ghi log thay thế:
         console.info("staff-payment-success received", d.order_id);
       }
     });
@@ -327,12 +323,12 @@
 
     function renderGrid() {
       const allTables = lastData?.tables || [];
-      theTables = allTables.filter(
+      const tables = allTables.filter(
         (t) =>
           selectedFloor === "all" || String(t.floor) === String(selectedFloor)
       );
       grid.innerHTML = "";
-      if (!theTables.length) {
+      if (!tables.length) {
         const div = document.createElement("div");
         div.className = "empty";
         div.textContent = "Không có bàn ở tầng đã chọn.";
@@ -342,7 +338,7 @@
 
       const now = Date.now();
 
-      theTables.forEach((t) => {
+      tables.forEach((t) => {
         const statusClass = t.is_busy ? "serving" : "available";
         const hasCall = !!t.has_call;
 
@@ -445,25 +441,32 @@
       });
     }
 
-    // ===== Flyout '...' – panel nhỏ hiển thị cạnh nút =====
-    let currentFlyout = null;
+    // ===== Flyout '…' xổ dọc (dropdown) =====
+    let SF_FLYOUT = null; // { el, off() }
+
     function closeFlyout() {
-      if (currentFlyout && currentFlyout.el && currentFlyout.el.parentNode) {
-        currentFlyout.el.parentNode.removeChild(currentFlyout.el);
-      }
-      if (currentFlyout && currentFlyout.off) {
-        currentFlyout.off();
-      }
-      currentFlyout = null;
+      if (!SF_FLYOUT) return;
+      try {
+        if (SF_FLYOUT.el && SF_FLYOUT.el.parentNode) {
+          SF_FLYOUT.el.parentNode.removeChild(SF_FLYOUT.el);
+        }
+        if (SF_FLYOUT.off) SF_FLYOUT.off();
+      } catch {}
+      SF_FLYOUT = null;
     }
 
     function openMoreFlyout(table, anchorBtn) {
-      closeFlyout();
+      // toggle: nếu đang mở thì đóng
+      if (SF_FLYOUT) {
+        closeFlyout();
+        return;
+      }
 
-      // Tạo panel
       const panel = document.createElement("div");
+      panel.className = "sf-flyout";
+      // đảm bảo xổ dọc cả khi thiếu CSS
       panel.style.cssText =
-        "position:fixed;background:#fff;border:1px solid #d0d7de;border-radius:10px;box-shadow:0 10px 30px rgba(2,6,23,.15);padding:10px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;z-index:5000";
+        "position:fixed;background:#fff;border:1px solid #d0d7de;border-radius:10px;box-shadow:0 10px 30px rgba(2,6,23,.15);padding:8px;display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:180px;z-index:5000;white-space:nowrap";
       panel.innerHTML = `
         ${table.has_call ? `
           <button class="btn" id="sf-call-ack">Tiếp nhận</button>
@@ -473,21 +476,23 @@
       `;
       document.body.appendChild(panel);
 
-      // Đặt vị trí cạnh nút 3 chấm
+      // Vị trí xổ dọc ngay dưới nút (nếu tràn dưới thì xổ lên)
       const rect = anchorBtn.getBoundingClientRect();
-      const pRect = panel.getBoundingClientRect();
       const margin = 8;
-      let top = rect.top + rect.height / 2 - pRect.height / 2;
-      top = Math.max(8, Math.min(top, window.innerHeight - pRect.height - 8));
-      let left = rect.right + margin;
-      if (left + pRect.width + 8 > window.innerWidth) {
-        // nếu lấn màn hình bên phải thì bung về trái nút
-        left = rect.left - margin - pRect.width;
+      let top = rect.bottom + margin;
+      let pRect = panel.getBoundingClientRect();
+      if (top + pRect.height + 8 > window.innerHeight) {
+        top = rect.top - margin - pRect.height;
       }
+      top = Math.max(8, Math.min(top, window.innerHeight - pRect.height - 8));
+      let left = rect.left;
+      if (left + pRect.width + 8 > window.innerWidth) {
+        left = window.innerWidth - pRect.width - 8;
+      }
+      left = Math.max(8, left);
       panel.style.top = `${top}px`;
       panel.style.left = `${left}px`;
 
-      // Đóng khi click ngoài hoặc nhấn Esc
       function onDocClick(ev) {
         const t = ev.target;
         if (t === panel || t === anchorBtn) return;
@@ -499,7 +504,7 @@
       }
       window.addEventListener("click", onDocClick, true);
       window.addEventListener("keydown", onKey);
-      currentFlyout = {
+      SF_FLYOUT = {
         el: panel,
         off: () => {
           window.removeEventListener("click", onDocClick, true);
@@ -507,7 +512,7 @@
         },
       };
 
-      // Gắn handler cho call trong panel
+      // Handlers: Tiếp nhận / Đã xong
       const btnAck = panel.querySelector("#sf-call-ack");
       const btnDone = panel.querySelector("#sf-call-done");
 
@@ -536,7 +541,6 @@
           }
         };
       } else if (btnAck) {
-        // Ẩn nếu không ở trạng thái open
         btnAck.style.display = "none";
       }
 
@@ -592,16 +596,16 @@
         bodyEl.innerHTML = `${callInfo}
           <div>Bàn <strong>${table.table_number}</strong> • Tầng <strong>${table.floor}</strong></div>
           <div style="margin-top:8px;color:#5b6574">Chưa có đơn chưa thanh toán cho bàn này.</div>`;
-
-        if (table.has_call) {
-          actionsEl.innerHTML = `
-            <button class="btn" id="sf-more-toggle" type="button" title="Mở rộng">…</button>
-          `;
-          const moreBtn = document.getElementById("sf-more-toggle");
-          moreBtn.onclick = () => openMoreFlyout(table, moreBtn);
-        } else {
-          actionsEl.innerHTML = "";
-        }
+        // luôn có nút "…" để chuyển bàn; nếu có call sẽ hiện thêm 2 nút trong dropdown
+        actionsEl.innerHTML = `
+          <button class="btn" id="sf-more-toggle" type="button" title="Mở rộng">…</button>
+        `;
+        const moreBtn = document.getElementById("sf-more-toggle");
+        moreBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openMoreFlyout(table, moreBtn);
+        });
         return;
       }
 
@@ -695,7 +699,7 @@
         </table>
       `;
 
-      // Xóa theo số lượng (có/không có order_item_id)
+      // Xóa theo số lượng
       const tbody = bodyEl.querySelector("tbody");
       if (tbody) {
         tbody.addEventListener("click", async (e) => {
@@ -718,7 +722,6 @@
             admin_password: auth.pass,
             reason: auth.reason || null,
             delete_qty: delQty,
-            // fallback JSON
             dish_id: btn.dataset.dish ? parseInt(btn.dataset.dish, 10) : null,
             quantity: currentQty,
             price: btn.dataset.price ? parseFloat(btn.dataset.price) : null,
@@ -796,115 +799,16 @@
         });
       }
 
-      // Toggle flyout "…"
       const moreBtn = document.getElementById("sf-more-toggle");
-      moreBtn.onclick = () => openMoreFlyout(table, moreBtn);
-
-      // Nhận kết quả từ payment.php (bản trong modal)
-      window.addEventListener("message", async (ev) => {
-        const d = ev && ev.data;
-        if (!d || typeof d !== "object") return;
-        if (d.type === "staff-payment-success") {
-          if (d.order_id) {
-            try {
-              const url = `${ORDER_API}?action=mark_paid&order_id=${encodeURIComponent(
-                d.order_id
-              )}&method=bank_transfer`;
-              const resp = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  order_id: d.order_id,
-                  method: "bank_transfer",
-                }),
-              });
-              try {
-                await jsonOrText(resp);
-              } catch {}
-            } catch {}
-            try {
-              if (lastData && Array.isArray(lastData.tables)) {
-                const t = lastData.tables.find(
-                  (x) =>
-                    x.current_order &&
-                    Number(x.current_order.id) === Number(d.order_id)
-                );
-                if (t?.current_order)
-                  t.current_order.payment_method = "bank_transfer";
-              }
-            } catch {}
-          }
-          await refresh();
-          const bd = document.getElementById("detail-backdrop");
-          if (bd) bd.style.display = "none";
-          alert("Đã xác nhận thanh toán (chuyển khoản).");
-        }
+      moreBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMoreFlyout(table, moreBtn);
       });
     }
 
-    // Vẫn giữ wireCallButtons (không còn dùng trực tiếp vì đã đưa vào flyout "…")
-    function wireCallButtons(table) {
-      if (!table.has_call) return;
-      const btnAck = document.getElementById("btn-call-ack");
-      const btnDone = document.getElementById("btn-call-resolve");
-
-      if (btnAck && table.call.status === "open") {
-        btnAck.style.display = "";
-        btnAck.onclick = async () => {
-          btnAck.disabled = true;
-          try {
-            const resp = await fetch(`${CALL_API}?action=ack`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: table.call.id }),
-            });
-            const data = await jsonOrText(resp);
-            if (!data.success)
-              throw new Error(data.message || "Không thể tiếp nhận");
-            await refresh();
-            const t = lastData.tables.find(
-              (x) => x.table_number === table.table_number
-            );
-            if (t) openDetail(t);
-          } catch (e) {
-            alert(e.message || "Có lỗi xảy ra.");
-          } finally {
-            btnAck.disabled = false;
-          }
-        };
-      } else if (btnAck) {
-        btnAck.style.display = "none";
-      }
-
-      if (btnDone) {
-        btnDone.onclick = async () => {
-          btnDone.disabled = true;
-          try {
-            const resp = await fetch(`${CALL_API}?action=resolve`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: table.call.id }),
-            });
-            const data = await jsonOrText(resp);
-            if (!data.success)
-              throw new Error(data.message || "Không thể hoàn tất");
-            await refresh();
-            const t = lastData.tables.find(
-              (x) => x.table_number === table.table_number
-            );
-            if (t) openDetail(t);
-          } catch (e) {
-            alert(e.message || "Có lỗi xảy ra.");
-          } finally {
-            btnDone.disabled = false;
-          }
-        };
-      }
-    }
-
     function closeDetail() {
-      const bd = document.getElementById("detail-backdrop");
-      if (bd) bd.style.display = "none";
+      backdrop.style.display = "none";
       selectedTableNumber = null;
       closeFlyout();
     }
