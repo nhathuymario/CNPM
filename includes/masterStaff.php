@@ -20,6 +20,7 @@
   <script src="<?php echo BASE_URL; ?>assets/js/menu.js" defer></script>
   <script src="<?php echo BASE_URL; ?>assets/js/user.js" defer></script>
   <script src="<?php echo BASE_URL; ?>assets/js/staff-floor.js" defer></script>
+  <script src="<?php echo BASE_URL; ?>assets/js/staff_transfer_table.js" defer></script>
   <title>Master Layout</title>
 </head>
 <body>

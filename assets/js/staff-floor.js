@@ -58,15 +58,17 @@
           a.muted = true;
           const p = a.play();
           if (p && typeof p.then === "function") {
-            p.then(() => {
-              a.pause();
-              a.currentTime = 0;
-              a.muted = false;
-            }).catch(() => {
-              a.pause();
-              a.currentTime = 0;
-              a.muted = false;
-            });
+            p
+              .then(() => {
+                a.pause();
+                a.currentTime = 0;
+                a.muted = false;
+              })
+              .catch(() => {
+                a.pause();
+                a.currentTime = 0;
+                a.muted = false;
+              });
           } else {
             a.pause();
             a.currentTime = 0;
@@ -172,7 +174,6 @@
       cleanupAddedFlash();
     }
 
-    // Nhận kết quả từ payment.php (global listener, không dùng alert nữa)
     // CSS cho badge "Món mới"
     function ensureAddedBadgeStyles() {
       if (document.getElementById("sf-added-badge-style")) return;
@@ -326,12 +327,12 @@
 
     function renderGrid() {
       const allTables = lastData?.tables || [];
-      const tables = allTables.filter(
+      theTables = allTables.filter(
         (t) =>
           selectedFloor === "all" || String(t.floor) === String(selectedFloor)
       );
       grid.innerHTML = "";
-      if (!tables.length) {
+      if (!theTables.length) {
         const div = document.createElement("div");
         div.className = "empty";
         div.textContent = "Không có bàn ở tầng đã chọn.";
@@ -341,7 +342,7 @@
 
       const now = Date.now();
 
-      tables.forEach((t) => {
+      theTables.forEach((t) => {
         const statusClass = t.is_busy ? "serving" : "available";
         const hasCall = !!t.has_call;
 
@@ -388,61 +389,183 @@
       });
     }
 
-    // Mini modal: xác thực Admin + số lượng + lý do
-    // Mini modal: xác thực Admin + số lượng + lý do (đã bỏ gợi ý lý do mặc định)
-function promptAdminQty(currentQty = 1) {
-  return new Promise((resolve) => {
-    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-    const wrap = document.createElement("div");
-    wrap.style.cssText =
-      "position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center";
+    // ===== Mini modal xóa món: xác thực Admin + số lượng + lý do =====
+    function promptAdminQty(currentQty = 1) {
+      return new Promise((resolve) => {
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        const wrap = document.createElement("div");
+        wrap.style.cssText =
+          "position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center";
 
-    const qtyBlock = `
-      <div>
-        <label style="display:block;margin:8px 0 4px 2px;color:#374151;font-size:12px">Số lượng cần hủy</label>
-        <input id="adm-delqty" type="number" min="1" max="${currentQty || 1}" value="${currentQty > 1 ? 1 : 1}"
-               style="padding:8px;border:1px solid #d1d5db;border-radius:8px;width:120px">
-        <span style="margin-left:6px;color:#6b7280">/ ${currentQty || 1}</span>
-      </div>`;
+        const qtyBlock = `
+          <div>
+            <label style="display:block;margin:8px 0 4px 2px;color:#374151;font-size:12px">Số lượng cần hủy</label>
+            <input id="adm-delqty" type="number" min="1" max="${currentQty ||
+              1}" value="${currentQty > 1 ? 1 : 1}"
+                   style="padding:8px;border:1px solid #d1d5db;border-radius:8px;width:120px">
+            <span style="margin-left:6px;color:#6b7280">/ ${currentQty ||
+              1}</span>
+          </div>`;
 
-    wrap.innerHTML = `
-      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;width:360px;max-width:92%">
-        <h3 style="margin:0 0 8px 0;color:#111827;font-size:16px">Xác nhận quyền Admin</h3>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <input id="adm-user" placeholder="Tài khoản Admin"
-                 style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
-          <input id="adm-pass" type="password" placeholder="Mật khẩu"
-                 style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
-          ${qtyBlock}
-          <!-- Chỉ giữ placeholder mờ, KHÔNG set value mặc định -->
-          <input id="adm-reason" placeholder="Lý do hủy món"
-                 style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="adm-cancel" class="btn">Hủy</button>
-          <button id="adm-ok" class="btn btn-primary">Xác nhận</button>
-        </div>
-      </div>`;
+        wrap.innerHTML = `
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;width:360px;max-width:92%">
+            <h3 style="margin:0 0 8px 0;color:#111827;font-size:16px">Xác nhận quyền Admin</h3>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input id="adm-user" placeholder="Tài khoản Admin"
+                     style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+              <input id="adm-pass" type="password" placeholder="Mật khẩu"
+                     style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+              ${qtyBlock}
+              <input id="adm-reason" placeholder="Lý do hủy món"
+                     style="padding:8px;border:1px solid #d1d5db;border-radius:8px">
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+              <button id="adm-cancel" class="btn">Hủy</button>
+              <button id="adm-ok" class="btn btn-primary">Xác nhận</button>
+            </div>
+          </div>`;
 
-    document.body.appendChild(wrap);
-    const $ = (s) => wrap.querySelector(s);
-    $("#adm-user").focus();
+        document.body.appendChild(wrap);
+        const $ = (s) => wrap.querySelector(s);
+        $("#adm-user").focus();
 
-    function done(v) {
-      document.body.removeChild(wrap);
-      resolve(v);
+        function done(v) {
+          document.body.removeChild(wrap);
+          resolve(v);
+        }
+        $("#adm-cancel").onclick = () => done(null);
+        $("#adm-ok").onclick = () => {
+          const u = $("#adm-user").value.trim();
+          const p = $("#adm-pass").value;
+          const r = $("#adm-reason").value.trim();
+          let dq = parseInt($("#adm-delqty").value, 10);
+          dq = clamp(dq, 1, currentQty || 1);
+          done({ user: u, pass: p, qty: dq, reason: r });
+        };
+      });
     }
-    $("#adm-cancel").onclick = () => done(null);
-    $("#adm-ok").onclick = () => {
-      const u = $("#adm-user").value.trim();
-      const p = $("#adm-pass").value;
-      const r = $("#adm-reason").value.trim(); // người dùng tự nhập, không gợi ý
-      let dq = parseInt($("#adm-delqty").value, 10);
-      dq = clamp(dq, 1, currentQty || 1);
-      done({ user: u, pass: p, qty: dq, reason: r });
-    };
-  });
-}
+
+    // ===== Flyout '...' – panel nhỏ hiển thị cạnh nút =====
+    let currentFlyout = null;
+    function closeFlyout() {
+      if (currentFlyout && currentFlyout.el && currentFlyout.el.parentNode) {
+        currentFlyout.el.parentNode.removeChild(currentFlyout.el);
+      }
+      if (currentFlyout && currentFlyout.off) {
+        currentFlyout.off();
+      }
+      currentFlyout = null;
+    }
+
+    function openMoreFlyout(table, anchorBtn) {
+      closeFlyout();
+
+      // Tạo panel
+      const panel = document.createElement("div");
+      panel.style.cssText =
+        "position:fixed;background:#fff;border:1px solid #d0d7de;border-radius:10px;box-shadow:0 10px 30px rgba(2,6,23,.15);padding:10px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;z-index:5000";
+      panel.innerHTML = `
+        ${table.has_call ? `
+          <button class="btn" id="sf-call-ack">Tiếp nhận</button>
+          <button class="btn btn-primary" id="sf-call-done">Đã xong</button>
+        ` : ``}
+        <button class="btn btn-secondary" id="sf-transfer" data-action="transfer" data-table="${table.table_number}">Chuyển bàn</button>
+      `;
+      document.body.appendChild(panel);
+
+      // Đặt vị trí cạnh nút 3 chấm
+      const rect = anchorBtn.getBoundingClientRect();
+      const pRect = panel.getBoundingClientRect();
+      const margin = 8;
+      let top = rect.top + rect.height / 2 - pRect.height / 2;
+      top = Math.max(8, Math.min(top, window.innerHeight - pRect.height - 8));
+      let left = rect.right + margin;
+      if (left + pRect.width + 8 > window.innerWidth) {
+        // nếu lấn màn hình bên phải thì bung về trái nút
+        left = rect.left - margin - pRect.width;
+      }
+      panel.style.top = `${top}px`;
+      panel.style.left = `${left}px`;
+
+      // Đóng khi click ngoài hoặc nhấn Esc
+      function onDocClick(ev) {
+        const t = ev.target;
+        if (t === panel || t === anchorBtn) return;
+        if (panel.contains(t) || anchorBtn.contains(t)) return;
+        closeFlyout();
+      }
+      function onKey(ev) {
+        if (ev.key === "Escape") closeFlyout();
+      }
+      window.addEventListener("click", onDocClick, true);
+      window.addEventListener("keydown", onKey);
+      currentFlyout = {
+        el: panel,
+        off: () => {
+          window.removeEventListener("click", onDocClick, true);
+          window.removeEventListener("keydown", onKey);
+        },
+      };
+
+      // Gắn handler cho call trong panel
+      const btnAck = panel.querySelector("#sf-call-ack");
+      const btnDone = panel.querySelector("#sf-call-done");
+
+      if (btnAck && table.call?.status === "open") {
+        btnAck.onclick = async () => {
+          btnAck.disabled = true;
+          try {
+            const resp = await fetch(`${CALL_API}?action=ack`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: table.call.id }),
+            });
+            const data = await jsonOrText(resp);
+            if (!data.success)
+              throw new Error(data.message || "Không thể tiếp nhận");
+            await refresh();
+            const t = lastData.tables.find(
+              (x) => x.table_number === table.table_number
+            );
+            if (t) openDetail(t);
+          } catch (e) {
+            alert(e.message || "Có lỗi xảy ra.");
+          } finally {
+            btnAck.disabled = false;
+            closeFlyout();
+          }
+        };
+      } else if (btnAck) {
+        // Ẩn nếu không ở trạng thái open
+        btnAck.style.display = "none";
+      }
+
+      if (btnDone) {
+        btnDone.onclick = async () => {
+          btnDone.disabled = true;
+          try {
+            const resp = await fetch(`${CALL_API}?action=resolve`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: table.call.id }),
+            });
+            const data = await jsonOrText(resp);
+            if (!data.success)
+              throw new Error(data.message || "Không thể hoàn tất");
+            await refresh();
+            const t = lastData.tables.find(
+              (x) => x.table_number === table.table_number
+            );
+            if (t) openDetail(t);
+          } catch (e) {
+            alert(e.message || "Có lỗi xảy ra.");
+          } finally {
+            btnDone.disabled = false;
+            closeFlyout();
+          }
+        };
+      }
+    }
 
     // Modal detail
     const backdrop = document.getElementById("detail-backdrop");
@@ -453,6 +576,7 @@ function promptAdminQty(currentQty = 1) {
     function openDetail(table) {
       selectedTableNumber = table.table_number;
       backdrop.style.display = "flex";
+      closeFlyout();
 
       const callInfo = table.has_call
         ? `<div style="margin-bottom:8px;padding:8px 10px;background:#fff7ed;border:1px solid #ffedd5;border-radius:8px;color:#92400e">
@@ -468,12 +592,16 @@ function promptAdminQty(currentQty = 1) {
         bodyEl.innerHTML = `${callInfo}
           <div>Bàn <strong>${table.table_number}</strong> • Tầng <strong>${table.floor}</strong></div>
           <div style="margin-top:8px;color:#5b6574">Chưa có đơn chưa thanh toán cho bàn này.</div>`;
-        const callBtns = table.has_call
-          ? `<button class="btn" id="btn-call-ack">Tiếp nhận</button>
-             <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>`
-          : "";
-        actionsEl.innerHTML = callBtns;
-        wireCallButtons(table);
+
+        if (table.has_call) {
+          actionsEl.innerHTML = `
+            <button class="btn" id="sf-more-toggle" type="button" title="Mở rộng">…</button>
+          `;
+          const moreBtn = document.getElementById("sf-more-toggle");
+          moreBtn.onclick = () => openMoreFlyout(table, moreBtn);
+        } else {
+          actionsEl.innerHTML = "";
+        }
         return;
       }
 
@@ -491,7 +619,7 @@ function promptAdminQty(currentQty = 1) {
         </style>
       `;
 
-      // Hàng món (đã bỏ dòng “PTTT hiện tại”)
+      // Hàng món
       const rows = (o.items || [])
         .map(
           (i) => `
@@ -576,21 +704,18 @@ function promptAdminQty(currentQty = 1) {
           e.stopPropagation();
 
           const currentQty = parseInt(btn.dataset.qty || "1", 10) || 1;
-          const auth = await promptAdminQty(
-            currentQty,
-            `Xóa ${btn.dataset.name || ""} x${currentQty}`
-          );
+          const auth = await promptAdminQty(currentQty);
           if (!auth) return;
 
           const delQty = Math.max(
             1,
-            Math.min(currentQty, parseInt(auth.delQty || "1", 10) || 1)
+            Math.min(currentQty, parseInt(auth.qty || "1", 10) || 1)
           );
           const payload = {
             order_id: o.id,
             order_item_id: parseInt(btn.dataset.oi || "0", 10) || 0,
-            admin_username: auth.username,
-            admin_password: auth.password,
+            admin_username: auth.user,
+            admin_password: auth.pass,
             reason: auth.reason || null,
             delete_qty: delQty,
             // fallback JSON
@@ -624,18 +749,14 @@ function promptAdminQty(currentQty = 1) {
         });
       }
 
-      // Hành động thanh toán + call
+      // Hành động thanh toán + nút "…"
       const transferUrl = `${PAYMENT_URL}?order_id=${encodeURIComponent(
         o.id
       )}&method=bank_transfer`;
-      const callBtns = table.has_call
-        ? `<button class="btn" id="btn-call-ack">Tiếp nhận</button>
-           <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>`
-        : "";
       actionsEl.innerHTML = `
         <button class="btn btn-primary" id="btn-pay-cash">Thanh toán thành công</button>
         <a class="btn" id="btn-pay-transfer" href="${transferUrl}">Thanh toán bằng chuyển khoản</a>
-        ${callBtns}
+        <button class="btn" id="sf-more-toggle" type="button" title="Mở rộng">…</button>
       `;
 
       const btnCash = document.getElementById("btn-pay-cash");
@@ -655,7 +776,6 @@ function promptAdminQty(currentQty = 1) {
             throw new Error(data.message || "Thanh toán thất bại");
           await refresh();
           backdrop.style.display = "none";
-          // alert removed: no confirmation popup for cash payments
         } catch (e) {
           alert(e.message || "Có lỗi xảy ra.");
         } finally {
@@ -676,8 +796,11 @@ function promptAdminQty(currentQty = 1) {
         });
       }
 
-      // NOTE: removed inner window.message listener here (handled by the global listener above)
-      // Nhận kết quả từ payment.php (bản trong modal) — giữ nguyên như hiện tại
+      // Toggle flyout "…"
+      const moreBtn = document.getElementById("sf-more-toggle");
+      moreBtn.onclick = () => openMoreFlyout(table, moreBtn);
+
+      // Nhận kết quả từ payment.php (bản trong modal)
       window.addEventListener("message", async (ev) => {
         const d = ev && ev.data;
         if (!d || typeof d !== "object") return;
@@ -717,10 +840,9 @@ function promptAdminQty(currentQty = 1) {
           alert("Đã xác nhận thanh toán (chuyển khoản).");
         }
       });
-
-      wireCallButtons(table);
     }
 
+    // Vẫn giữ wireCallButtons (không còn dùng trực tiếp vì đã đưa vào flyout "…")
     function wireCallButtons(table) {
       if (!table.has_call) return;
       const btnAck = document.getElementById("btn-call-ack");
@@ -781,8 +903,10 @@ function promptAdminQty(currentQty = 1) {
     }
 
     function closeDetail() {
-      backdrop.style.display = "none";
+      const bd = document.getElementById("detail-backdrop");
+      if (bd) bd.style.display = "none";
       selectedTableNumber = null;
+      closeFlyout();
     }
     if (btnClose) btnClose.onclick = closeDetail;
     if (backdrop)
