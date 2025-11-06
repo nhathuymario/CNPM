@@ -468,11 +468,24 @@ function promptAdminQty(currentQty = 1) {
         bodyEl.innerHTML = `${callInfo}
           <div>Bàn <strong>${table.table_number}</strong> • Tầng <strong>${table.floor}</strong></div>
           <div style="margin-top:8px;color:#5b6574">Chưa có đơn chưa thanh toán cho bàn này.</div>`;
-        const callBtns = table.has_call
-          ? `<button class="btn" id="btn-call-ack">Tiếp nhận</button>
-             <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>`
-          : "";
-        actionsEl.innerHTML = callBtns;
+        
+        // Render "Mở rộng" button with popover for call + transfer actions
+        const moreActions = `
+          <button class="btn" id="btn-call-ack" data-in-popover="true" ${table.has_call ? '' : 'style="display:none"'}>Tiếp nhận</button>
+          <button class="btn btn-primary" id="btn-call-resolve" data-in-popover="true" ${table.has_call ? '' : 'style="display:none"'}>Đã xong</button>
+          <button class="btn" data-action="transfer" data-table="${table.table_number}" data-in-popover="true">Chuyển bàn</button>
+        `;
+        
+        actionsEl.innerHTML = `
+          <div class="sf-more-actions">
+            <button class="btn" id="btn-more-toggle">Mở rộng</button>
+            <div class="sf-more-popover" id="more-popover" style="display:none">
+              ${moreActions}
+            </div>
+          </div>
+        `;
+        
+        wireMoreButton();
         wireCallButtons(table);
         return;
       }
@@ -624,18 +637,26 @@ function promptAdminQty(currentQty = 1) {
         });
       }
 
-      // Hành động thanh toán + call
+      // Hành động thanh toán + "Mở rộng" button with popover for call + transfer
       const transferUrl = `${PAYMENT_URL}?order_id=${encodeURIComponent(
         o.id
       )}&method=bank_transfer`;
-      const callBtns = table.has_call
-        ? `<button class="btn" id="btn-call-ack">Tiếp nhận</button>
-           <button class="btn btn-primary" id="btn-call-resolve">Đã xong</button>`
-        : "";
+      
+      const moreActions = `
+        <button class="btn" id="btn-call-ack" data-in-popover="true" ${table.has_call && table.call.status === 'open' ? '' : 'style="display:none"'}>Tiếp nhận</button>
+        <button class="btn btn-primary" id="btn-call-resolve" data-in-popover="true" ${table.has_call ? '' : 'style="display:none"'}>Đã xong</button>
+        <button class="btn" data-action="transfer" data-table="${table.table_number}" data-in-popover="true">Chuyển bàn</button>
+      `;
+      
       actionsEl.innerHTML = `
         <button class="btn btn-primary" id="btn-pay-cash">Thanh toán thành công</button>
         <a class="btn" id="btn-pay-transfer" href="${transferUrl}">Thanh toán bằng chuyển khoản</a>
-        ${callBtns}
+        <div class="sf-more-actions">
+          <button class="btn" id="btn-more-toggle">Mở rộng</button>
+          <div class="sf-more-popover" id="more-popover" style="display:none">
+            ${moreActions}
+          </div>
+        </div>
       `;
 
       const btnCash = document.getElementById("btn-pay-cash");
@@ -675,6 +696,8 @@ function promptAdminQty(currentQty = 1) {
           if (!w) window.location.href = transferUrl;
         });
       }
+
+      wireMoreButton();
 
       // NOTE: removed inner window.message listener here (handled by the global listener above)
       // Nhận kết quả từ payment.php (bản trong modal) — giữ nguyên như hiện tại
@@ -719,6 +742,42 @@ function promptAdminQty(currentQty = 1) {
       });
 
       wireCallButtons(table);
+    }
+
+    function wireMoreButton() {
+      const btnToggle = document.getElementById("btn-more-toggle");
+      const popover = document.getElementById("more-popover");
+      if (!btnToggle || !popover) return;
+
+      btnToggle.onclick = (e) => {
+        e.stopPropagation();
+        const isVisible = popover.style.display !== "none";
+        popover.style.display = isVisible ? "none" : "block";
+      };
+
+      // Close popover when clicking outside
+      const closeHandler = (e) => {
+        if (
+          popover.style.display === "block" &&
+          !popover.contains(e.target) &&
+          !btnToggle.contains(e.target)
+        ) {
+          popover.style.display = "none";
+        }
+      };
+      document.addEventListener("click", closeHandler);
+      
+      // Cleanup when modal closes
+      const backdrop = document.getElementById("detail-backdrop");
+      if (backdrop) {
+        const observer = new MutationObserver(() => {
+          if (backdrop.style.display === "none") {
+            document.removeEventListener("click", closeHandler);
+            observer.disconnect();
+          }
+        });
+        observer.observe(backdrop, { attributes: true, attributeFilter: ["style"] });
+      }
     }
 
     function wireCallButtons(table) {
@@ -802,6 +861,9 @@ function promptAdminQty(currentQty = 1) {
         alert("Không thể tải dữ liệu: " + (e.message || e));
       }
     }
+
+    // Expose refresh for external use (e.g., staff_transfer_table.js)
+    window.SF_REFRESH = refresh;
 
     function render() {
       if (!lastData) return;
