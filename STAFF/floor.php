@@ -17,6 +17,7 @@ ob_start();
     // File thanh toán nằm trong thư mục STAFF
     PAYMENT_URL: 'payment.php',
     CALL_API: '../functions/call_staff_api.php',
+    TRANSFER_API: '../functions/staff_transfer_table.php',
     SOUNDS: {
       order: '../assets/audio/order.mp3',
       help:  '../assets/audio/help.mp3'
