@@ -104,3 +104,59 @@
   color: #fff;
   margin-left: 4px;
 }
+/* ==== Fix: đừng giữ nền trắng khi active; chỉ trắng khi hover/keyboard focus ==== */
+.header-bar{
+  --header-bg: #0b72cf;
+  --chip-bg:   #095fb1;
+}
+
+/* Nút chip phẳng xanh đậm */
+.header-left .header-btn,
+.header-left .header-btn:link,
+.header-left .header-btn:visited,
+.header-left .header-btn:active {
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  height:40px !important;
+  padding:0 16px !important;
+  background:var(--chip-bg) !important;
+  color:#fff !important;
+  font-weight:700 !important;
+  text-decoration:none !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  cursor:pointer;
+}
+
+/* Vạch ngăn giữa các nút */
+.header-left .header-btn + .header-btn{
+  border-left:1px solid rgba(255,255,255,.85) !important;
+}
+
+/* Chỉ trắng khi hover hoặc khi focus-visible (dùng bàn phím) */
+.header-left .header-btn:hover,
+.header-left .header-btn:focus-visible{
+  background:#fff !important;
+  color:var(--header-bg) !important;
+  border-color:#fff !important;
+}
+
+/* Không đổi màu vì :focus thường giữ state sau click chuột */
+.header-left .header-btn:focus{
+  outline:none !important;
+}
+
+/* KHÔNG tô trắng khi active nữa — giữ nền xanh đậm */
+.header-left .header-btn.active{
+  background:var(--chip-bg) !important;
+  color:#fff !important;
+  border-color:rgba(255,255,255,.65) !important;
+}
+
+/* Icon theo màu chữ */
+.header-left .header-btn i,
+.header-left .header-btn svg{
+  color:currentColor !important;
+}

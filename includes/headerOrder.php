@@ -5,11 +5,10 @@
   if (!empty($_GET['k']))     $orderQuery['k'] = $_GET['k'];
   $orderHref = 'index.php' . (!empty($orderQuery) ? ('?' . http_build_query($orderQuery)) : '');
 
-  // Ưu tiên biến từ ORDER/index.php; fallback dùng $_GET
   $dataTable = isset($table_number) ? (int)$table_number : (isset($_GET['table']) ? (int)$_GET['table'] : '');
   $dataK     = isset($k) ? $k : (isset($_GET['k']) ? $_GET['k'] : '');
 ?>
-<header class="order-header">
+<header>
   <div class="header-bar">
     <div class="header-left">
       <span class="menu-icon" id="sidebarToggle" title="Mở menu">
@@ -34,19 +33,14 @@
 
       <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
 
-      <!-- Link Order (không bo, dùng style riêng của Order) -->
-      <a class="header-link" href="<?php echo htmlspecialchars($orderHref); ?>">
+      <!-- Đồng bộ kiểu nút với Staff/Admin: dùng header-btn -->
+      <a class="header-btn order-btn" href="<?php echo htmlspecialchars($orderHref); ?>">
         <i class="fa-solid fa-clipboard"></i>
         <span>Order</span>
       </a>
-
-      <!-- Vạch ngăn trắng giữa 2 nút -->
-      <span class="header-sep" aria-hidden="true"></span>
-
-      <!-- Link Trợ giúp (đồng nhất với Order) -->
       <a
         id="callStaffBtn"
-        class="header-link"
+        class="header-btn"
         href="#"
         data-action="help"
         <?php if ($dataTable !== ''): ?>
@@ -58,6 +52,20 @@
         <i class="fa-solid fa-bell"></i>
         <span>Trợ giúp</span>
       </a>
+    </div>
+    <div class="user-info">
+      <span class="username">
+        <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
+      </span>
+      <span class="dropdown-arrow" onclick="toggleUserMenu()">&#9660;</span>
+      <div id="user-menu" class="user-menu">
+        <div class="menu-item user">
+          <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
+        </div>
+        <a class="menu-item" href="../functions/logout.php">
+          <i class="fa-solid fa-right-from-bracket"></i>Đăng xuất
+        </a>
+      </div>
     </div>
   </div>
 </header>
