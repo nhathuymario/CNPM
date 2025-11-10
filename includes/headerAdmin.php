@@ -44,6 +44,9 @@
         <div class="menu-item user">
           <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
         </div>
+        <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/loginStaff.php'">
+          Chuyển sang Staff
+        </div>
         <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/change_password.php'">
           Đổi mật khẩu
         </div>

@@ -44,6 +44,9 @@ $isFloor = ($current === 'floor.php');
         <div class="menu-item user">
           <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
         </div>
+        <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/login.php'">
+          Chuyển sang trang Admin
+        </div>
         <div class="menu-item logout" onclick="window.location.href='<?php echo BASE_URL; ?>functions/change_passwordStaff.php'">
           Đổi mật khẩu
         </div>
