@@ -382,6 +382,16 @@ ob_start();
             $inCart = isset($_SESSION['order'][$dish['id']]); 
             $nameLc = mb_strtolower($dish['name'], 'UTF-8');
             $catVal = strtolower($dish['category']);
+
+            // Chuẩn hoá đường dẫn ảnh cho client
+            $imgPath = $dish['image'] ?? '';
+            if ($imgPath !== '' && (strpos($imgPath, 'assets/') === 0 || strpos($imgPath, 'images/') === 0)) {
+              // Ảnh lưu kiểu 'assets/...' hoặc 'images/...' -> file order nằm trong thư mục con nên cần ../
+              $imgWebPath = '../' . $imgPath;
+            } else {
+              // Trường hợp khác (absolute URL, hoặc đã có ../) thì dùng nguyên
+              $imgWebPath = $imgPath;
+            }
       ?>
         <form method="get" class="product-card" 
               data-name="<?php echo htmlspecialchars($nameLc); ?>"
@@ -390,7 +400,9 @@ ob_start();
           <input type="hidden" name="table" value="<?php echo $table_number; ?>">
           <input type="hidden" name="k" value="<?php echo htmlspecialchars($k); ?>">
           <input type="hidden" name="category" value="<?php echo htmlspecialchars($category); ?>">
-          <img src="<?php echo htmlspecialchars($dish['image']); ?>" alt="<?php echo htmlspecialchars($dish['name']); ?>">
+
+          <img src="<?php echo htmlspecialchars($imgWebPath); ?>" alt="<?php echo htmlspecialchars($dish['name']); ?>">
+
           <div class="price-tag"><?php echo number_format($dish['price']/1000, 0); ?>K</div>
           <div class="title"><?php echo htmlspecialchars($dish['name']); ?></div>
           <?php if ($inCart): ?>

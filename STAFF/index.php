@@ -5,7 +5,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-require '../functions/checkloginStaff.php';
+require  '../functions/checkloginStaff.php';
 checkRole(['admin', 'staff']);
 require '../functions/database.php';
 $user_id = $_SESSION['user_id'];
